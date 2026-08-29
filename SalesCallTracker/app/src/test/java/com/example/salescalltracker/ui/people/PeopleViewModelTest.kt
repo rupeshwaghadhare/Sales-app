@@ -9,6 +9,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
+import com.example.salescalltracker.data.Conversation
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -149,6 +151,12 @@ class PeopleViewModelTest {
 }
 
 private class FakePeopleRepository : ActivityRepository {
+    override fun observeGroups(): Flow<List<Conversation>> = flowOf(emptyList())
+
+    override suspend fun createGroup(name: String, memberIds: List<String>): Conversation {
+        throw UnsupportedOperationException("Not used in PeopleViewModelTest")
+    }
+
     private val peopleFlow = MutableStateFlow<List<Person>>(emptyList())
     private val activitiesFlow = MutableStateFlow<List<Activity>>(emptyList())
 
@@ -206,3 +214,4 @@ private class FakePeopleRepository : ActivityRepository {
 
     override suspend fun setConversationArchived(conversationId: String, value: Boolean) = Unit
 }
+
