@@ -16,7 +16,11 @@ class RoomActivityRepositoryTest {
             id = "person-1",
             name = "Aisha Khan",
             phoneNumber = "+15550012345",
-            relationshipType = RelationshipType.CUSTOMER,
+            relationshipTypes = setOf(
+                RelationshipType.FRIEND,
+                RelationshipType.COLLEAGUE,
+                RelationshipType.BUSINESS_PARTNER,
+            ),
         )
 
         val personEntity = person.toEntity()
@@ -25,7 +29,7 @@ class RoomActivityRepositoryTest {
         assertEquals(person.id, restoredPerson.id)
         assertEquals(person.name, restoredPerson.name)
         assertEquals(person.phoneNumber, restoredPerson.phoneNumber)
-        assertEquals(person.relationshipType, restoredPerson.relationshipType)
+        assertEquals(person.relationshipTypes, restoredPerson.relationshipTypes)
 
         val activity = Activity(
             id = "activity-1",

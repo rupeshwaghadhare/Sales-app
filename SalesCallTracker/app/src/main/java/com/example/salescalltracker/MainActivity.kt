@@ -1,5 +1,6 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
+﻿@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 package com.example.salescalltracker
+
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -8,17 +9,35 @@ import android.provider.CallLog
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import com.example.salescalltracker.data.ActivityRepository
+import com.example.salescalltracker.data.AppDatabase
+import com.example.salescalltracker.data.RoomActivityRepository
 import com.example.salescalltracker.theme.SalesCallTrackerTheme
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 data class SalesCall(
     val number: String,
@@ -29,6 +48,13 @@ data class SalesCall(
 
 class MainActivity : ComponentActivity() {
 
+    private val activityRepository: ActivityRepository by lazy {
+        RoomActivityRepository(
+            AppDatabase.getInstance(applicationContext)
+        )
+    }
+    private var calls by mutableStateOf<List<SalesCall>>(emptyList())
+
     private val callLogPermission =
         registerForActivityResult(
             ActivityResultContracts.RequestPermission()
@@ -38,19 +64,18 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-    private var calls by mutableStateOf<List<SalesCall>>(emptyList())
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
-            SalesCallTrackerTheme {
-                CallLogScreen(
-                    calls = calls,
-                    onLoadCalls = { requestCallLogPermission() }
-                )
-            }
-        }
+    SalesCallTrackerTheme {
+        MainNavigation(
+            repository = activityRepository,
+            calls = calls,
+            onLoadCalls = { requestCallLogPermission() }
+        )
+    }
+}
 
         requestCallLogPermission()
     }
@@ -69,6 +94,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun loadCallLogs() {
+
         val result = mutableListOf<SalesCall>()
 
         val cursor = contentResolver.query(
@@ -85,6 +111,7 @@ class MainActivity : ComponentActivity() {
         )
 
         cursor?.use {
+
             val numberIndex = it.getColumnIndex(CallLog.Calls.NUMBER)
             val typeIndex = it.getColumnIndex(CallLog.Calls.TYPE)
             val dateIndex = it.getColumnIndex(CallLog.Calls.DATE)
@@ -92,8 +119,11 @@ class MainActivity : ComponentActivity() {
 
             while (it.moveToNext() && result.size < 100) {
 
-                val number = it.getString(numberIndex) ?: "Unknown"
-                val typeValue = it.getInt(typeIndex)
+                val number =
+                    it.getString(numberIndex) ?: "Unknown"
+
+                val typeValue =
+                    it.getInt(typeIndex)
 
                 val type = when (typeValue) {
                     CallLog.Calls.INCOMING_TYPE -> "Incoming"
@@ -103,12 +133,16 @@ class MainActivity : ComponentActivity() {
                     else -> "Other"
                 }
 
-                val date = SimpleDateFormat(
-                    "dd MMM yyyy, HH:mm",
-                    Locale.getDefault()
-                ).format(Date(it.getLong(dateIndex)))
+                val date =
+                    SimpleDateFormat(
+                        "dd MMM yyyy, HH:mm",
+                        Locale.getDefault()
+                    ).format(
+                        Date(it.getLong(dateIndex))
+                    )
 
-                val duration = "${it.getLong(durationIndex)} sec"
+                val duration =
+                    "${it.getLong(durationIndex)} sec"
 
                 result.add(
                     SalesCall(
@@ -130,6 +164,7 @@ fun CallLogScreen(
     calls: List<SalesCall>,
     onLoadCalls: () -> Unit
 ) {
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -147,6 +182,15 @@ fun CallLogScreen(
                 .padding(16.dp)
         ) {
 
+            Text(
+                text = "Sales Call Tracker is running",
+                style = MaterialTheme.typography.headlineSmall
+            )
+
+            Spacer(
+                modifier = Modifier.height(16.dp)
+            )
+
             Button(
                 onClick = onLoadCalls,
                 modifier = Modifier.fillMaxWidth()
@@ -154,26 +198,34 @@ fun CallLogScreen(
                 Text("Refresh Call Logs")
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(
+                modifier = Modifier.height(16.dp)
+            )
 
             Text(
-                text = "Calls: ${calls.size}",
+                text = "Calls found: ${calls.size}",
                 style = MaterialTheme.typography.titleMedium
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(
+                modifier = Modifier.height(8.dp)
+            )
 
             LazyColumn(
+                modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+
                 items(calls) { call ->
 
                     Card(
                         modifier = Modifier.fillMaxWidth()
                     ) {
+
                         Column(
                             modifier = Modifier.padding(16.dp)
                         ) {
+
                             Text(
                                 text = call.number,
                                 style = MaterialTheme.typography.titleMedium
@@ -189,3 +241,10 @@ fun CallLogScreen(
         }
     }
 }
+
+
+
+
+
+
+

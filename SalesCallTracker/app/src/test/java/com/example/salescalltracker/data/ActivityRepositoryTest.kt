@@ -23,6 +23,9 @@ class ActivityRepositoryTest {
             RelationshipType.COLLEAGUE,
             RelationshipType.STUDENT,
             RelationshipType.TEACHER,
+            RelationshipType.SERVICE_PROVIDER,
+            RelationshipType.FREELANCER,
+            RelationshipType.CONSULTANT,
             RelationshipType.OTHER,
         )
 
@@ -35,7 +38,11 @@ class ActivityRepositoryTest {
             id = "person-1",
             name = "Aisha Khan",
             phoneNumber = "+15550012345",
-            relationshipType = RelationshipType.CUSTOMER,
+            relationshipTypes = setOf(
+                RelationshipType.FRIEND,
+                RelationshipType.COLLEAGUE,
+                RelationshipType.BUSINESS_PARTNER,
+            ),
         )
 
         val activity = Activity(
@@ -52,7 +59,14 @@ class ActivityRepositoryTest {
         assertEquals("person-1", person.id)
         assertEquals("activity-1", activity.id)
         assertEquals(ActivityType.CALL, activity.type)
-        assertEquals(RelationshipType.CUSTOMER, person.relationshipType)
+        assertEquals(
+            setOf(
+                RelationshipType.FRIEND,
+                RelationshipType.COLLEAGUE,
+                RelationshipType.BUSINESS_PARTNER,
+            ),
+            person.relationshipTypes,
+        )
         assertTrue(activity.personId != null)
         assertTrue(activity.followUpDate != null)
     }

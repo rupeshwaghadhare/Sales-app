@@ -1,17 +1,33 @@
-package com.example.salescalltracker.data
+﻿package com.example.salescalltracker.data
 
 import com.example.salescalltracker.model.Activity
 import com.example.salescalltracker.model.Person
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 interface ActivityRepository {
     fun observePeople(): Flow<List<Person>>
     fun observeActivities(): Flow<List<Activity>>
+    fun observeActivitiesForPerson(personId: String): Flow<List<Activity>>
     suspend fun upsertPerson(person: Person)
+    suspend fun deletePerson(person: Person)
     suspend fun upsertActivity(activity: Activity)
+    suspend fun deleteActivity(activity: Activity)
     suspend fun getPersonById(id: String): Person?
     suspend fun getActivityById(id: String): Activity?
+    fun observeConversations(): Flow<List<Conversation>>
+    fun observeGroups(): Flow<List<Conversation>>
+    fun observeMessages(conversationId: String): Flow<List<ChatMessage>>
+    suspend fun getOrCreateConversation(personId: String): Conversation
+    suspend fun createGroup(name: String, memberIds: List<String>): Conversation
+    suspend fun sendMessage(message: ChatMessage)
+    suspend fun deleteMessage(message: ChatMessage)
+    suspend fun markConversationRead(conversationId: String)
+    suspend fun markConversationUnread(conversationId: String)
+    suspend fun setConversationPinned(conversationId: String, value: Boolean)
+    suspend fun setConversationMuted(conversationId: String, value: Boolean)
+    suspend fun setConversationArchived(conversationId: String, value: Boolean)
 }
 
 class RoomActivityRepository(
@@ -24,12 +40,25 @@ class RoomActivityRepository(
     override fun observeActivities(): Flow<List<Activity>> =
         database.activityDao().observeAll().map { entities -> entities.map(ActivityEntity::toDomain) }
 
+    override fun observeActivitiesForPerson(personId: String): Flow<List<Activity>> =
+        database.activityDao().observeForPerson(personId).map { entities ->
+            entities.map(ActivityEntity::toDomain).sortedByDescending { it.timestamp }
+        }
+
     override suspend fun upsertPerson(person: Person) {
         database.personDao().upsert(person.toEntity())
     }
 
+    override suspend fun deletePerson(person: Person) {
+        database.personDao().delete(person.toEntity())
+    }
+
     override suspend fun upsertActivity(activity: Activity) {
         database.activityDao().upsert(activity.toEntity())
+    }
+
+    override suspend fun deleteActivity(activity: Activity) {
+        database.activityDao().delete(activity.toEntity())
     }
 
     override suspend fun getPersonById(id: String): Person? =
@@ -37,4 +66,103 @@ class RoomActivityRepository(
 
     override suspend fun getActivityById(id: String): Activity? =
         database.activityDao().getById(id)?.toDomain()
+
+    override fun observeConversations(): Flow<List<Conversation>> =
+        database.conversationDao().observeActive().map { entities -> entities.map(ConversationEntity::toDomain) }
+
+    override fun observeGroups(): Flow<List<Conversation>> =
+        database.conversationDao().observeByType(ConversationType.GROUP.name).map { entities ->
+            entities.map(ConversationEntity::toDomain)
+        }
+
+    override fun observeMessages(conversationId: String): Flow<List<ChatMessage>> =
+        database.chatMessageDao().observeForConversation(conversationId).map { entities -> entities.map(ChatMessageEntity::toDomain) }
+
+    override suspend fun getOrCreateConversation(personId: String): Conversation {
+        return database.conversationDao().getByPersonId(personId)?.toDomain()
+            ?: Conversation(
+                id = java.util.UUID.randomUUID().toString(),
+                personId = personId,
+                name = personId,
+                lastMessage = "",
+                lastMessageTimestamp = 0L,
+            ).also { database.conversationDao().upsert(it.toEntity()) }
+    }
+
+    override suspend fun createGroup(name: String, memberIds: List<String>): Conversation {
+        val trimmedName = name.trim()
+        require(trimmedName.isNotBlank()) { "Group name is required" }
+
+        val group = Conversation(
+            id = java.util.UUID.randomUUID().toString(),
+            personId = null,
+            name = trimmedName,
+            type = ConversationType.GROUP.name,
+            lastMessage = "",
+            lastMessageTimestamp = 0L,
+        )
+
+        database.conversationDao().upsert(group.toEntity())
+
+        val members = memberIds.distinct().map { personId ->
+            ConversationMemberEntity(
+                conversationId = group.id,
+                personId = personId,
+                role = "MEMBER",
+                joinedAt = System.currentTimeMillis(),
+            )
+        }
+
+        if (members.isNotEmpty()) {
+            database.conversationMemberDao().addMembers(members)
+        }
+
+        return group
+    }
+
+    override suspend fun sendMessage(message: ChatMessage) {
+        database.chatMessageDao().upsert(message.toEntity())
+        val conversation = database.conversationDao().getById(message.conversationId) ?: return
+        database.conversationDao().upsert(
+            conversation.copy(
+                lastMessage = message.text,
+                lastMessageTimestamp = message.timestamp,
+                unreadCount = if (message.senderType == ChatSenderType.PERSON && !message.isRead) conversation.unreadCount + 1 else conversation.unreadCount,
+            ),
+        )
+    }
+
+    override suspend fun deleteMessage(message: ChatMessage) {
+        database.chatMessageDao().delete(message.toEntity())
+        val latest = database.chatMessageDao()
+            .observeForConversation(message.conversationId)
+        val conversation = database.conversationDao().getById(message.conversationId) ?: return
+        val remaining = latest.first()
+        val newest = remaining.lastOrNull()
+        database.conversationDao().upsert(
+            conversation.copy(
+                lastMessage = newest?.text.orEmpty(),
+                lastMessageTimestamp = newest?.timestamp ?: 0L,
+            ),
+        )
+    }
+
+    override suspend fun markConversationRead(conversationId: String) {
+        database.conversationDao().markRead(conversationId)
+        database.chatMessageDao().markRead(conversationId)
+    }
+
+    override suspend fun markConversationUnread(conversationId: String) =
+        database.conversationDao().markUnread(conversationId)
+
+    override suspend fun setConversationPinned(conversationId: String, value: Boolean) =
+        database.conversationDao().setPinned(conversationId, value)
+
+    override suspend fun setConversationMuted(conversationId: String, value: Boolean) =
+        database.conversationDao().setMuted(conversationId, value)
+
+    override suspend fun setConversationArchived(conversationId: String, value: Boolean) =
+        database.conversationDao().setArchived(conversationId, value)
 }
+
+

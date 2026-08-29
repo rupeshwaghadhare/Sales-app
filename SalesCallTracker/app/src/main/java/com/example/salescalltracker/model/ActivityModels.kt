@@ -11,6 +11,9 @@ enum class RelationshipType {
     COLLEAGUE,
     STUDENT,
     TEACHER,
+    SERVICE_PROVIDER,
+    FREELANCER,
+    CONSULTANT,
     OTHER
 }
 
@@ -28,8 +31,11 @@ data class Person(
     val id: String,
     val name: String,
     val phoneNumber: String? = null,
-    val relationshipType: RelationshipType = RelationshipType.OTHER
-)
+    val relationshipTypes: Set<RelationshipType> = emptySet(),
+) {
+    val relationshipType: RelationshipType
+        get() = relationshipTypes.firstOrNull() ?: RelationshipType.OTHER
+}
 
 data class Activity(
     val id: String,

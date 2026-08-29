@@ -1,6 +1,7 @@
 package com.example.salescalltracker.data
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -10,6 +11,9 @@ import kotlinx.coroutines.flow.Flow
 interface ActivityDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(activity: ActivityEntity)
+
+    @Delete
+    suspend fun delete(activity: ActivityEntity)
 
     @Query("SELECT * FROM activities ORDER BY timestamp DESC")
     fun observeAll(): Flow<List<ActivityEntity>>

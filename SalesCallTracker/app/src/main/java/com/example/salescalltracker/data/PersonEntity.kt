@@ -14,21 +14,33 @@ data class PersonEntity(
     @PrimaryKey val id: String,
     val name: String,
     val phoneNumber: String?,
-    val relationshipType: String,
+    val relationshipTypes: String = "",
 )
+
+private fun Set<RelationshipType>.toStoredValue(): String =
+    this.sortedBy { it.name }.joinToString(",") { it.name }
+
+private fun String?.toRelationshipSet(): Set<RelationshipType> =
+    this
+        ?.split(",")
+        ?.mapNotNull { raw ->
+            runCatching { RelationshipType.valueOf(raw.trim()) }.getOrNull()
+        }
+        ?.toSet()
+        ?: emptySet()
 
 fun Person.toEntity(): PersonEntity = PersonEntity(
     id = id,
     name = name,
     phoneNumber = phoneNumber,
-    relationshipType = relationshipType.name,
+    relationshipTypes = relationshipTypes.toStoredValue(),
 )
 
 fun PersonEntity.toDomain(): Person = Person(
     id = id,
     name = name,
     phoneNumber = phoneNumber,
-    relationshipType = RelationshipType.valueOf(relationshipType),
+    relationshipTypes = relationshipTypes.toRelationshipSet(),
 )
 
 @Entity(
