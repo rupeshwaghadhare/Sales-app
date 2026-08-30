@@ -47,16 +47,7 @@ if(Test-Path $adb){
     }
 }
 
-Write-Host "`n[6] Opening VS Code" -ForegroundColor Yellow
-Start-Process code -ArgumentList "`"$PWD`""
-
-Write-Host "`n[7] Opening Android Studio" -ForegroundColor Yellow
-$studio="$env:ProgramFiles\Android\Android Studio\bin\studio64.exe"
-if(Test-Path $studio){
-    Start-Process $studio -ArgumentList "`"$PWD`""
-}
-
-Write-Host "`n[8] Git checkpoint" -ForegroundColor Yellow
+Write-Host "`n[6] Git checkpoint" -ForegroundColor Yellow
 git add -A
 git commit -m "Auto checkpoint: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
 
