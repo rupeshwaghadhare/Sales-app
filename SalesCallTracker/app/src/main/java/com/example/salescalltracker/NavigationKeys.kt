@@ -8,6 +8,7 @@ import kotlinx.serialization.Serializable
 @Serializable data object Calls : NavKey
 @Serializable data object Chats : NavKey
 @Serializable data object More : NavKey
+@Serializable data object Earn : NavKey
 @Serializable data class ChatConversation(val conversationId: String) : NavKey
 
 
@@ -16,5 +17,7 @@ import kotlinx.serialization.Serializable
 
 
 @Serializable data class CallDetails(val number: String) : NavKey
+
+
 
 

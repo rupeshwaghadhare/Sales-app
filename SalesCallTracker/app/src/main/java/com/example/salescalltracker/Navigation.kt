@@ -25,6 +25,7 @@ import com.example.salescalltracker.data.ActivityRepository
 import com.example.salescalltracker.ui.chat.ChatListScreen
 import com.example.salescalltracker.ui.chat.ChatScreen
 import com.example.salescalltracker.ui.main.MainScreen
+import com.example.salescalltracker.ui.earn.EarnHubScreen
 import com.example.salescalltracker.ui.people.PeopleScreen
 
 data class NavigationCall(
@@ -119,8 +120,11 @@ fun MainNavigation(
               onBack = { backStack.removeLastOrNull() },
             )
           }
+          entry<Earn> {
+            EarnHubScreen()
+          }
           entry<More> {
-            MoreScreen()
+            MoreScreen(onEarnClick = { backStack.add(Earn) })
           }
         },
     )
@@ -132,7 +136,7 @@ private fun <T> MutableList<T>.replaceTop(destination: T) {
 }
 
 @Composable
-private fun MoreScreen() {
+private fun MoreScreen(onEarnClick: () -> Unit = {}) {
   Scaffold(
     topBar = {
       androidx.compose.material3.TopAppBar(
@@ -167,7 +171,7 @@ private fun MoreScreen() {
       item { Text("Earn", style = androidx.compose.material3.MaterialTheme.typography.titleMedium) }
 
       item {
-        MoreMenuItem("💰 Earn Hub", "Find ways to earn through sales, services and referrals")
+        MoreMenuItem("💰 Earn Hub", "Find ways to earn through sales, services and referrals", onClick = onEarnClick)
       }
 
       item {
@@ -231,8 +235,10 @@ private fun MoreScreen() {
 private fun MoreMenuItem(
   title: String,
   description: String,
+  onClick: () -> Unit = {},
 ) {
   androidx.compose.material3.OutlinedCard(
+    onClick = onClick,
     modifier = Modifier.fillMaxWidth(),
   ) {
     Column(
@@ -250,3 +256,4 @@ private fun MoreMenuItem(
     }
   }
 }
+
