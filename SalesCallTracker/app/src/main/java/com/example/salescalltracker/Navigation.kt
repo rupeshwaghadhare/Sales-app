@@ -9,6 +9,7 @@ import com.example.salescalltracker.ui.profile.ProfileScreen
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -133,23 +134,119 @@ private fun <T> MutableList<T>.replaceTop(destination: T) {
 @Composable
 private fun MoreScreen() {
   Scaffold(
-    topBar = { androidx.compose.material3.TopAppBar(title = { Text("More") }) },
+    topBar = {
+      androidx.compose.material3.TopAppBar(
+        title = { Text("More") }
+      )
+    },
   ) { paddingValues ->
-    Column(
-      modifier = Modifier.padding(paddingValues).padding(16.dp),
-      verticalArrangement = Arrangement.spacedBy(12.dp),
+    androidx.compose.foundation.lazy.LazyColumn(
+      modifier = Modifier
+        .padding(paddingValues)
+        .padding(horizontal = 16.dp),
+      verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-      Text("Business tools")
-      Text("More CRM tools will appear here as they become available.")
+
+      item {
+        androidx.compose.material3.Card(
+          modifier = Modifier.fillMaxWidth(),
+        ) {
+          Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+          ) {
+            Text("👤 Profile", style = androidx.compose.material3.MaterialTheme.typography.titleLarge)
+            Text(
+              "Manage your personal and business profile",
+              color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+          }
+        }
+      }
+
+      item { Text("Earn", style = androidx.compose.material3.MaterialTheme.typography.titleMedium) }
+
+      item {
+        MoreMenuItem("💰 Earn Hub", "Find ways to earn through sales, services and referrals")
+      }
+
+      item {
+        MoreMenuItem("🎯 Opportunities", "Find jobs, leads, projects and business opportunities")
+      }
+
+      item {
+        MoreMenuItem("🤝 Refer & Earn", "Refer products and services and track commissions")
+      }
+
+      item { Text("Commerce", style = androidx.compose.material3.MaterialTheme.typography.titleMedium) }
+
+      item {
+        MoreMenuItem("🛒 Marketplace", "Buy and sell products and services")
+      }
+
+      item {
+        MoreMenuItem("📦 Digital Products", "Sell PDFs, templates, courses and digital products")
+      }
+
+      item { Text("Create", style = androidx.compose.material3.MaterialTheme.typography.titleMedium) }
+
+      item {
+        MoreMenuItem("🚀 Mini App Builder", "Create simple business apps without coding")
+      }
+
+      item {
+        MoreMenuItem("🌐 Website & Store", "Create a business website or online store")
+      }
+
+      item { Text("Business", style = androidx.compose.material3.MaterialTheme.typography.titleMedium) }
+
+      item {
+        MoreMenuItem("💼 Leads & Customers", "Manage leads, customers and sales")
+      }
+
+      item {
+        MoreMenuItem("📅 Tasks & Meetings", "Manage follow-ups, tasks and meetings")
+      }
+
+      item {
+        MoreMenuItem("👥 Team & Groups", "Collaborate with your team and business partners")
+      }
+
+      item { Text("Money", style = androidx.compose.material3.MaterialTheme.typography.titleMedium) }
+
+      item {
+        MoreMenuItem("💳 Wallet & Earnings", "Track earnings, transactions and payouts")
+      }
+
+      item { Text("Settings", style = androidx.compose.material3.MaterialTheme.typography.titleMedium) }
+
+      item {
+        MoreMenuItem("⚙️ Settings", "Account, notifications, privacy, security and help")
+      }
     }
   }
 }
 
-
-
-
-
-
-
-
-
+@Composable
+private fun MoreMenuItem(
+  title: String,
+  description: String,
+) {
+  androidx.compose.material3.OutlinedCard(
+    modifier = Modifier.fillMaxWidth(),
+  ) {
+    Column(
+      modifier = Modifier.padding(16.dp),
+      verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+      Text(
+        title,
+        style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
+      )
+      Text(
+        description,
+        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+      )
+    }
+  }
+}
