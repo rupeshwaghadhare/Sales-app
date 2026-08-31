@@ -3,6 +3,7 @@
 package com.example.salescalltracker
 
 import com.example.salescalltracker.ui.calls.CallLogScreen
+import com.example.salescalltracker.ui.calls.CallDetailsScreen
 
 import com.example.salescalltracker.ui.profile.ProfileScreen
 
@@ -104,7 +105,18 @@ fun MainNavigation(
             )
           }
           entry<Calls> {
-            CallLogScreen(calls = calls, onLoadCalls = onLoadCalls)
+            CallLogScreen(
+              calls = calls,
+              onLoadCalls = onLoadCalls,
+              onViewDetails = { number -> backStack.add(CallDetails(number)) },
+            )
+          }
+          entry<CallDetails> { key ->
+            CallDetailsScreen(
+              number = key.number,
+              calls = calls,
+              onBack = { backStack.removeLastOrNull() },
+            )
           }
           entry<More> {
             MoreScreen()
@@ -132,6 +144,9 @@ private fun MoreScreen() {
     }
   }
 }
+
+
+
 
 
 

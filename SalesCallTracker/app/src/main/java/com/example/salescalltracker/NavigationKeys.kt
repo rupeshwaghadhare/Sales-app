@@ -14,3 +14,7 @@ import kotlinx.serialization.Serializable
 
 
 
+
+@Serializable data class CallDetails(val number: String) : NavKey
+
+

@@ -2,9 +2,6 @@
 
 package com.example.salescalltracker.ui.calls
 
-import android.content.Intent
-import android.net.Uri
-
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,8 +15,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -37,27 +32,23 @@ import com.example.salescalltracker.SalesCall
 @Composable
 fun CallLogScreen(
     calls: List<SalesCall>,
-    onLoadCalls: () -> Unit
+    onLoadCalls: () -> Unit,
+    onViewDetails: (String) -> Unit = {}
 ) {
     var searchText by remember { mutableStateOf("") }
 
-    val filteredCalls = calls.filter {
-        searchText.isBlank() ||
-            it.number.contains(searchText, ignoreCase = true) ||
-            it.type.contains(searchText, ignoreCase = true)
-    }
+    val groupedCalls = calls
+        .filter {
+            searchText.isBlank() ||
+                it.number.contains(searchText, ignoreCase = true) ||
+                it.type.contains(searchText, ignoreCase = true)
+        }
+        .groupBy { it.number }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text("Call Log")
-                },
-                actions = {
-                    IconButton(onClick = onLoadCalls) {
-                        Text("↻")
-                    }
-                }
+                title = { Text("Call Log") }
             )
         }
     ) { paddingValues ->
@@ -77,7 +68,7 @@ fun CallLogScreen(
             )
 
             Text(
-                text = "${calls.size} calls found",
+                text = "${calls.size} call records | ${groupedCalls.size} numbers",
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
@@ -88,24 +79,17 @@ fun CallLogScreen(
                 onValueChange = { searchText = it },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                leadingIcon = {
-                   Text("â†»")
-                },
                 placeholder = {
                     Text("Search phone number or type")
                 }
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             Button(
                 onClick = onLoadCalls,
                 modifier = Modifier.fillMaxWidth()
             ) {
-               Text("ðŸ”")
-
-                Spacer(modifier = Modifier.padding(4.dp))
-
                 Text("Refresh Call Logs")
             }
 
@@ -115,8 +99,15 @@ fun CallLogScreen(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                items(filteredCalls) { call ->
-                    CallCard(call)
+                items(
+                    groupedCalls.entries.toList(),
+                    key = { it.key }
+                ) { entry ->
+                    GroupedCallCard(
+                        number = entry.key,
+                        calls = entry.value,
+                        onViewDetails = onViewDetails
+                    )
                 }
             }
         }
@@ -124,9 +115,13 @@ fun CallLogScreen(
 }
 
 @Composable
-private fun CallCard(
-    call: SalesCall
+private fun GroupedCallCard(
+    number: String,
+    calls: List<SalesCall>,
+    onViewDetails: (String) -> Unit
 ) {
+    val latest = calls.lastOrNull()
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -138,21 +133,23 @@ private fun CallCard(
         ) {
 
             Text(
-                text = call.number,
-                style = MaterialTheme.typography.titleMedium
+                text = number,
+                style = MaterialTheme.typography.titleLarge
             )
 
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = "${call.type} â€¢ ${call.date}",
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                text = "${calls.size} calls",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
             )
 
-            Text(
-                text = "Duration: ${call.duration}",
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            latest?.let {
+                Text("Last call: ${it.date}")
+                Text("Last type: ${it.type}")
+                Text("Last duration: ${it.duration}")
+            }
 
             Spacer(modifier = Modifier.height(10.dp))
 
@@ -160,54 +157,35 @@ private fun CallCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-
                 Button(
                     onClick = {
-                        // Call action will be connected to Android phone later.
+                        // Phone action will be connected next.
                     },
                     modifier = Modifier.weight(1f)
                 ) {
-                   Text("📞")
-                    Spacer(modifier = Modifier.padding(2.dp))
                     Text("Call")
                 }
 
                 Button(
                     onClick = {
-                        openWhatsApp(call.number)
+                        // WhatsApp action will be connected next.
                     },
                     modifier = Modifier.weight(1f)
                 ) {
                     Text("WhatsApp")
                 }
+            }
 
-                IconButton(
-                    onClick = {
-                        // Save-contact flow will be added next.
-                    }
-                ) {
-                    Text("ðŸ‘¤")
-                }
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Button(
+                onClick = {
+                    onViewDetails(number)
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("View Details (${calls.size} calls)")
             }
         }
     }
-}
-
-private fun openWhatsApp(
-    number: String
-) {
-    val cleanNumber = number
-        .filter { it.isDigit() || it == '+' }
-        .replace("+", "")
-
-    val intent = Intent(
-        Intent.ACTION_VIEW,
-        Uri.parse("https://wa.me/$cleanNumber")
-    )
-
-    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-
-    // This helper is intentionally isolated.
-    // WhatsApp integration will be connected from an Android Context
-    // in the next step.
 }
