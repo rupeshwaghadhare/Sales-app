@@ -1,4 +1,4 @@
-package com.example.salescalltracker.data
+﻿package com.example.salescalltracker.data
 
 import android.content.Context
 import androidx.room.Database
@@ -13,9 +13,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         ActivityEntity::class,
         ConversationEntity::class,
         ConversationMemberEntity::class,
-        ChatMessageEntity::class
+        ChatMessageEntity::class,
+        BusinessProfileEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -25,6 +26,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun conversationDao(): ConversationDao
     abstract fun chatMessageDao(): ChatMessageDao
     abstract fun conversationMemberDao(): ConversationMemberDao
+    abstract fun businessProfileDao(): BusinessProfileDao
 
     companion object {
 
@@ -210,6 +212,28 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS business_profiles (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        businessName TEXT NOT NULL,
+                        category TEXT NOT NULL,
+                        phone TEXT,
+                        whatsapp TEXT,
+                        location TEXT,
+                        description TEXT,
+                        logoUri TEXT,
+                        websiteUrl TEXT,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase =
             INSTANCE ?: synchronized(this) {
 
@@ -221,7 +245,8 @@ abstract class AppDatabase : RoomDatabase() {
                     .addMigrations(
                         MIGRATION_1_2,
                         MIGRATION_2_3,
-                        MIGRATION_3_4
+                        MIGRATION_3_4,
+                        MIGRATION_4_5
                     )
                     .build()
                     .also {
@@ -230,3 +255,6 @@ abstract class AppDatabase : RoomDatabase() {
             }
     }
 }
+
+
+
