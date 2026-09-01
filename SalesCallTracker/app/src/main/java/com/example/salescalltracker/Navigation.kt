@@ -182,11 +182,7 @@ fun MainNavigation(
             )
           }
 
-          entry<Locations> {
-            LocationsScreen(
-              onBack = { backStack.removeLastOrNull() },
-            )
-          }
+
           entry<People> {
             PeopleScreen(repository = repository)
           }
@@ -353,6 +349,7 @@ private fun MoreMenuItem(
     }
   }
 }
+
 
 
 
