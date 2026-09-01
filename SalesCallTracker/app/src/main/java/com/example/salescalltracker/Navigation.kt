@@ -29,6 +29,8 @@ import com.example.salescalltracker.ui.earn.EarnHubScreen
 import com.example.salescalltracker.ui.people.PeopleScreen
 import com.example.salescalltracker.ui.discover.DiscoverScreen
 import com.example.salescalltracker.ui.create.CreateScreen
+import com.example.salescalltracker.ui.events.EventSearchScreen
+import com.example.salescalltracker.ui.locations.LocationSearchScreen
 import com.example.salescalltracker.ui.create.OfferingCreateScreen
 import com.example.salescalltracker.ui.platform.*
 import com.example.salescalltracker.ui.connect.ConnectScreen
@@ -129,6 +131,18 @@ fun MainNavigation(
           entry<CreateOffering> { key ->
             OfferingCreateScreen(
               type = key.type,
+              onBack = { backStack.removeLastOrNull() },
+            )
+          }
+          entry<EventSearch> {
+            EventSearchScreen(
+              city = "Pune",
+              onBack = { backStack.removeLastOrNull() },
+            )
+          }
+
+          entry<Locations> {
+            LocationSearchScreen(
               onBack = { backStack.removeLastOrNull() },
             )
           }
@@ -339,6 +353,7 @@ private fun MoreMenuItem(
     }
   }
 }
+
 
 
 
