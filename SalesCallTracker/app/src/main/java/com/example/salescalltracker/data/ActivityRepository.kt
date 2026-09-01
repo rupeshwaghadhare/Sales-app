@@ -2,6 +2,7 @@
 
 import com.example.salescalltracker.model.Activity
 import com.example.salescalltracker.model.Person
+import com.example.salescalltracker.model.BusinessProfile
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -16,6 +17,9 @@ interface ActivityRepository {
     suspend fun deleteActivity(activity: Activity)
     suspend fun getPersonById(id: String): Person?
     suspend fun getActivityById(id: String): Activity?
+    fun observeBusinessProfile(): Flow<BusinessProfile?>
+    suspend fun saveBusinessProfile(profile: BusinessProfile)
+    suspend fun getBusinessProfile(): BusinessProfile?
     fun observeConversations(): Flow<List<Conversation>>
     fun observeGroups(): Flow<List<Conversation>>
     fun observeMessages(conversationId: String): Flow<List<ChatMessage>>
@@ -34,6 +38,15 @@ class RoomActivityRepository(
     private val database: AppDatabase,
 ) : ActivityRepository {
 
+    override fun observeBusinessProfile(): Flow<BusinessProfile?> =
+        database.businessProfileDao().observeBusiness().map { it?.toDomain() }
+
+    override suspend fun saveBusinessProfile(profile: BusinessProfile) {
+        database.businessProfileDao().upsert(profile.toEntity())
+    }
+
+    override suspend fun getBusinessProfile(): BusinessProfile? =
+        database.businessProfileDao().getBusiness()?.toDomain()
     override fun observePeople(): Flow<List<Person>> =
         database.personDao().observeAll().map { entities -> entities.map(PersonEntity::toDomain) }
 
@@ -164,5 +177,8 @@ class RoomActivityRepository(
     override suspend fun setConversationArchived(conversationId: String, value: Boolean) =
         database.conversationDao().setArchived(conversationId, value)
 }
+
+
+
 
 

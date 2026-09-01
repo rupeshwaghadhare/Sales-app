@@ -1,4 +1,5 @@
-package com.example.salescalltracker.ui.people
+﻿package com.example.salescalltracker.ui.people
+import com.example.salescalltracker.model.BusinessProfile
 
 import com.example.salescalltracker.data.ActivityRepository
 import com.example.salescalltracker.model.Activity
@@ -213,5 +214,13 @@ private class FakePeopleRepository : ActivityRepository {
     override suspend fun setConversationMuted(conversationId: String, value: Boolean) = Unit
 
     override suspend fun setConversationArchived(conversationId: String, value: Boolean) = Unit
+    override fun observeBusinessProfile(): Flow<BusinessProfile?> =
+        flowOf(null)
+
+    override suspend fun saveBusinessProfile(profile: BusinessProfile) = Unit
+
+    override suspend fun getBusinessProfile(): BusinessProfile? = null
 }
+
+
 

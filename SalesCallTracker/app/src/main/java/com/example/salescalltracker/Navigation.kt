@@ -27,6 +27,9 @@ import com.example.salescalltracker.ui.chat.ChatScreen
 import com.example.salescalltracker.ui.main.MainScreen
 import com.example.salescalltracker.ui.earn.EarnHubScreen
 import com.example.salescalltracker.ui.people.PeopleScreen
+import com.example.salescalltracker.ui.discover.DiscoverScreen
+import com.example.salescalltracker.ui.create.CreateScreen
+import com.example.salescalltracker.ui.connect.ConnectScreen
 
 data class NavigationCall(
   val number: String,
@@ -49,32 +52,36 @@ fun MainNavigation(
         NavigationBarItem(
           selected = backStack.lastOrNull() == Main,
           onClick = { backStack.replaceTop(Main) },
-          icon = {},
+          icon = { Text("🏠") },
           label = { Text("Home") },
         )
+
         NavigationBarItem(
-          selected = backStack.lastOrNull() == Chats,
-          onClick = { backStack.replaceTop(Chats) },
-          icon = {},
-          label = { Text("Chats") },
+          selected = backStack.lastOrNull() == Discover,
+          onClick = { backStack.replaceTop(Discover) },
+          icon = { Text("🔎") },
+          label = { Text("Discover") },
         )
+
         NavigationBarItem(
-          selected = backStack.lastOrNull() == People,
-          onClick = { backStack.replaceTop(People) },
-          icon = {},
-          label = { Text("People") },
+          selected = backStack.lastOrNull() == Create,
+          onClick = { backStack.replaceTop(Create) },
+          icon = { Text("＋") },
+          label = { Text("Create") },
         )
+
         NavigationBarItem(
-          selected = backStack.lastOrNull() == Calls,
-          onClick = { backStack.replaceTop(Calls) },
-          icon = {},
-          label = { Text("Calls") },
+          selected = backStack.lastOrNull() == Connect,
+          onClick = { backStack.replaceTop(Connect) },
+          icon = { Text("💬") },
+          label = { Text("Connect") },
         )
+
         NavigationBarItem(
-          selected = backStack.lastOrNull() == More,
-          onClick = { backStack.replaceTop(More) },
-          icon = {},
-          label = { Text("More") },
+          selected = backStack.lastOrNull() == Profile,
+          onClick = { backStack.replaceTop(Profile) },
+          icon = { Text("👤") },
+          label = { Text("Profile") },
         )
       }
     },
@@ -89,6 +96,30 @@ fun MainNavigation(
               onItemClick = { navKey -> backStack.add(navKey) },
               repository = repository,
             )
+          }
+          entry<Discover> {
+            DiscoverScreen(
+              onMarketplaceClick = { backStack.add(Marketplace) },
+              onCampaignsClick = { backStack.add(Campaigns) },
+            )
+          }
+
+          entry<Create> {
+            CreateScreen(
+              onBusinessClick = { backStack.add(BusinessProfile) },
+            )
+          }
+
+          entry<Connect> {
+            ConnectScreen(
+              onChatsClick = { backStack.add(Chats) },
+              onPeopleClick = { backStack.add(People) },
+              onCallsClick = { backStack.add(Calls) },
+            )
+          }
+
+          entry<Profile> {
+            ProfileScreen()
           }
           entry<People> {
             PeopleScreen(repository = repository)
@@ -256,4 +287,7 @@ private fun MoreMenuItem(
     }
   }
 }
+
+
+
 

@@ -14,9 +14,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         ConversationEntity::class,
         ConversationMemberEntity::class,
         ChatMessageEntity::class,
-        BusinessProfileEntity::class
+        BusinessProfileEntity::class,
+        OfferingEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -27,6 +28,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun chatMessageDao(): ChatMessageDao
     abstract fun conversationMemberDao(): ConversationMemberDao
     abstract fun businessProfileDao(): BusinessProfileDao
+    abstract fun offeringDao(): OfferingDao
 
     companion object {
 
@@ -234,6 +236,51 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS offerings (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        ownerId TEXT NOT NULL,
+                        workspaceId TEXT,
+                        title TEXT NOT NULL,
+                        description TEXT NOT NULL,
+                        type TEXT NOT NULL,
+                        price REAL,
+                        currency TEXT NOT NULL,
+                        location TEXT,
+                        imageUri TEXT,
+                        contact TEXT,
+                        websiteUrl TEXT,
+                        isActive INTEGER NOT NULL,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_offerings_ownerId ON offerings(ownerId)"
+                )
+
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_offerings_workspaceId ON offerings(workspaceId)"
+                )
+
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_offerings_type ON offerings(type)"
+                )
+
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_offerings_location ON offerings(location)"
+                )
+
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_offerings_isActive ON offerings(isActive)"
+                )
+            }
+        }
         fun getInstance(context: Context): AppDatabase =
             INSTANCE ?: synchronized(this) {
 
@@ -246,7 +293,8 @@ abstract class AppDatabase : RoomDatabase() {
                         MIGRATION_1_2,
                         MIGRATION_2_3,
                         MIGRATION_3_4,
-                        MIGRATION_4_5
+                        MIGRATION_4_5,
+                        MIGRATION_5_6
                     )
                     .build()
                     .also {
@@ -255,6 +303,8 @@ abstract class AppDatabase : RoomDatabase() {
             }
     }
 }
+
+
 
 
 
