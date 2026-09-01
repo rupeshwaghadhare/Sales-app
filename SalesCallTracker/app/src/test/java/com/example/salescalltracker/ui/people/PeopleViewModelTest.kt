@@ -86,7 +86,10 @@ class PeopleViewModelTest {
         advanceUntilIdle()
 
         val successBefore = viewModel.uiState
-            .first { it is PeopleUiState.Success } as PeopleUiState.Success
+            .first {
+                it is PeopleUiState.Success &&
+                    it.people.isNotEmpty()
+            } as PeopleUiState.Success
         val original = successBefore.people.first()
         val originalId = original.id
 
@@ -106,7 +109,10 @@ class PeopleViewModelTest {
         advanceUntilIdle()
 
         val successAfter = viewModel.uiState
-            .first { it is PeopleUiState.Success } as PeopleUiState.Success
+            .first {
+                it is PeopleUiState.Success &&
+                    it.people.any { person -> person.id == originalId }
+            } as PeopleUiState.Success
         val updated = successAfter.people.first()
         assertEquals(originalId, updated.id)
         assertEquals("Rahul Sharma", updated.name)
@@ -134,7 +140,10 @@ class PeopleViewModelTest {
         advanceUntilIdle()
 
         val successBefore = viewModel.uiState
-            .first { it is PeopleUiState.Success } as PeopleUiState.Success
+            .first {
+                it is PeopleUiState.Success &&
+                    it.people.isNotEmpty()
+            } as PeopleUiState.Success
         val person = successBefore.people.first()
 
         viewModel.selectPerson(person)
@@ -142,7 +151,10 @@ class PeopleViewModelTest {
         advanceUntilIdle()
 
         val successAfter = viewModel.uiState
-            .first { it is PeopleUiState.Success } as PeopleUiState.Success
+            .first {
+                it is PeopleUiState.Success &&
+                    it.people.any { p -> p.id == person.id }
+            } as PeopleUiState.Success
         assertEquals(1, successAfter.personActivities.size)
         assertEquals("Follow-up", successAfter.personActivities.first().title)
         assertEquals(person.id, successAfter.personActivities.first().personId)
@@ -221,6 +233,11 @@ private class FakePeopleRepository : ActivityRepository {
 
     override suspend fun getBusinessProfile(): BusinessProfile? = null
 }
+
+
+
+
+
 
 
 

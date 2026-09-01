@@ -22,6 +22,7 @@ import kotlinx.serialization.Serializable
 @Serializable data object Products : NavKey
 @Serializable data object Website : NavKey
 @Serializable data object Locations : NavKey
+@Serializable data class CreateOffering(val type: String) : NavKey
 
 @Serializable data class ChatConversation(
     val conversationId: String,
@@ -30,4 +31,5 @@ import kotlinx.serialization.Serializable
 @Serializable data class CallDetails(
     val number: String,
 ) : NavKey
+
 

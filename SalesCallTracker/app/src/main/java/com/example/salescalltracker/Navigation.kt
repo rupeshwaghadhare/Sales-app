@@ -29,6 +29,7 @@ import com.example.salescalltracker.ui.earn.EarnHubScreen
 import com.example.salescalltracker.ui.people.PeopleScreen
 import com.example.salescalltracker.ui.discover.DiscoverScreen
 import com.example.salescalltracker.ui.create.CreateScreen
+import com.example.salescalltracker.ui.create.OfferingCreateScreen
 import com.example.salescalltracker.ui.platform.*
 import com.example.salescalltracker.ui.connect.ConnectScreen
 
@@ -108,6 +109,9 @@ fun MainNavigation(
           entry<Create> {
             CreateScreen(
               onBusinessClick = { backStack.add(BusinessProfile) },
+              onOfferingClick = { type ->
+                backStack.add(CreateOffering(type))
+              },
             )
           }
 
@@ -121,6 +125,12 @@ fun MainNavigation(
 
           entry<Profile> {
             ProfileScreen()
+          }
+          entry<CreateOffering> { key ->
+            OfferingCreateScreen(
+              type = key.type,
+              onBack = { backStack.removeLastOrNull() },
+            )
           }
           entry<BusinessProfile> {
             BusinessProfileScreen(
@@ -329,6 +339,8 @@ private fun MoreMenuItem(
     }
   }
 }
+
+
 
 
 
