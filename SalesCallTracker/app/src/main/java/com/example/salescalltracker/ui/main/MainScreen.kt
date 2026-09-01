@@ -1,184 +1,345 @@
-package com.example.salescalltracker.ui.main
+﻿package com.example.salescalltracker.ui.main
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Button
-import androidx.compose.material3.Text
+import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.NavKey
-import com.example.salescalltracker.Chats
-import com.example.salescalltracker.Calls
-import com.example.salescalltracker.People
+import com.example.salescalltracker.BusinessProfile
+import com.example.salescalltracker.Campaigns
+import com.example.salescalltracker.Create
+import com.example.salescalltracker.Discover
+import com.example.salescalltracker.Locations
+import com.example.salescalltracker.Marketplace
+import com.example.salescalltracker.Products
+import com.example.salescalltracker.Services
+import com.example.salescalltracker.Website
 import com.example.salescalltracker.data.ActivityRepository
-import com.example.salescalltracker.theme.SalesCallTrackerTheme
-import com.example.salescalltracker.ui.home.DashboardFollowUp
-import com.example.salescalltracker.ui.home.HomeDashboardUiState
-import com.example.salescalltracker.ui.home.HomeDashboardViewModel
 
 @Composable
 fun MainScreen(
-  onItemClick: (NavKey) -> Unit,
-  repository: ActivityRepository,
-  modifier: Modifier = Modifier,
-  viewModel: HomeDashboardViewModel = viewModel { HomeDashboardViewModel(repository) },
+    onItemClick: (NavKey) -> Unit,
+    repository: ActivityRepository,
+    modifier: Modifier = Modifier,
 ) {
-  val state = viewModel.uiState.collectAsStateWithLifecycle().value
-  when (state) {
-    HomeDashboardUiState.Loading -> {
-      Text("Loading dashboard...", modifier = modifier)
-    }
-    is HomeDashboardUiState.Success -> {
-      val successState = state
-      HomeDashboard(state = successState, onItemClick = onItemClick, modifier = modifier)
-    }
-    is HomeDashboardUiState.Error -> {
-      val errorState = state
-      Text(errorState.message, modifier = modifier)
-    }
-  }
+    HomePlatform(
+        onItemClick = onItemClick,
+        modifier = modifier,
+    )
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun HomeDashboard(
-  state: HomeDashboardUiState.Success,
-  onItemClick: (NavKey) -> Unit,
-  modifier: Modifier = Modifier,
+private fun HomePlatform(
+    onItemClick: (NavKey) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-  LazyColumn(
-    modifier = modifier.fillMaxSize(),
-    contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 20.dp),
-    verticalArrangement = Arrangement.spacedBy(14.dp),
-  ) {
-    item {
-      Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text("Good morning", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-        Text("Sales overview", style = MaterialTheme.typography.headlineMedium)
-        Text("Your business activity at a glance", color = MaterialTheme.colorScheme.onSurfaceVariant)
-      }
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(
+            start = 16.dp,
+            top = 20.dp,
+            end = 16.dp,
+            bottom = 100.dp,
+        ),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+
+        item {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Text(
+                    "Welcome 👋",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+
+                Text(
+                    "Explore. Create. Connect.",
+                    style = MaterialTheme.typography.headlineMedium,
+                )
+
+                Text(
+                    "Discover businesses, products, services, campaigns, creators and opportunities around you.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(
+                    modifier = Modifier.padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        "🚀 Build your presence",
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+
+                    Text(
+                        "Create your own business, service, product, channel or professional identity.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+
+                    Button(
+                        onClick = { onItemClick(Create) },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text("Create something")
+                    }
+                }
+            }
+        }
+
+        item {
+            Text(
+                "Explore",
+                style = MaterialTheme.typography.titleLarge,
+            )
+        }
+
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                PlatformCard(
+                    "🔎",
+                    "Discover",
+                    "Find people, brands and opportunities",
+                    Modifier.weight(1f),
+                ) {
+                    onItemClick(Discover)
+                }
+
+                PlatformCard(
+                    "🛒",
+                    "Marketplace",
+                    "Products and services",
+                    Modifier.weight(1f),
+                ) {
+                    onItemClick(Marketplace)
+                }
+            }
+        }
+
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                PlatformCard(
+                    "📣",
+                    "Campaigns",
+                    "Brand campaigns and collaborations",
+                    Modifier.weight(1f),
+                ) {
+                    onItemClick(Campaigns)
+                }
+
+                PlatformCard(
+                    "🧰",
+                    "Services",
+                    "Freelancers and professionals",
+                    Modifier.weight(1f),
+                ) {
+                    onItemClick(Services)
+                }
+            }
+        }
+
+        item {
+            Text(
+                "Around you",
+                style = MaterialTheme.typography.titleLarge,
+            )
+        }
+
+        item {
+            OutlinedCard(
+                onClick = { onItemClick(Locations) },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(5.dp),
+                ) {
+                    Text(
+                        "📍 Local businesses & events",
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+
+                    Text(
+                        "Find shops, businesses, events, offers and campaigns near your location.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+
+        item {
+            Text(
+                "What people are building",
+                style = MaterialTheme.typography.titleLarge,
+            )
+        }
+
+        items(
+            listOf(
+                "🏪 Local Business" to "Build a digital identity for your shop or business.",
+                "💻 Freelancer" to "Publish your services and find customers.",
+                "🎨 Creator Channel" to "Create a channel and collaborate with brands.",
+                "🎓 Knowledge" to "Share what you know and monetize your knowledge.",
+                "🛍️ Products" to "Sell new or used physical or digital products.",
+                "🏢 Franchise" to "Promote franchise opportunities for your brand.",
+            )
+        ) { item ->
+            OutlinedCard(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = { onItemClick(Create) },
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        item.first,
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Text(
+                        item.second,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+
+        item {
+            Text(
+                "Your digital presence",
+                style = MaterialTheme.typography.titleLarge,
+            )
+        }
+
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                PlatformCard(
+                    "🏢",
+                    "My Business",
+                    "Manage your identity",
+                    Modifier.weight(1f),
+                ) {
+                    onItemClick(BusinessProfile)
+                }
+
+                PlatformCard(
+                    "🌐",
+                    "Website",
+                    "Build your online presence",
+                    Modifier.weight(1f),
+                ) {
+                    onItemClick(Website)
+                }
+            }
+        }
+
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                PlatformCard(
+                    "🛍️",
+                    "Products",
+                    "Manage what you sell",
+                    Modifier.weight(1f),
+                ) {
+                    onItemClick(Products)
+                }
+
+                PlatformCard(
+                    "📍",
+                    "Locations",
+                    "Manage places and events",
+                    Modifier.weight(1f),
+                ) {
+                    onItemClick(Locations)
+                }
+            }
+        }
+
+        item {
+            Spacer(modifier = Modifier.height(20.dp))
+        }
+
+        item {
+            Text(
+                "Your workspace",
+                style = MaterialTheme.typography.titleLarge,
+            )
+        }
+
+        item {
+            Text(
+                "Sales, calls, people, chats and follow-ups are available inside your workspace when you need them.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
-    item { SummaryGrid(state) }
-    item {
-      Text("Quick actions", style = MaterialTheme.typography.titleLarge)
-      FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Button(onClick = { onItemClick(People) }) { Text("People") }
-        Button(onClick = { onItemClick(Calls) }) { Text("Call log") }
-        Button(onClick = { onItemClick(Chats) }) { Text("New chat") }
-      }
-    }
-    item { Text("Today's follow-ups", style = MaterialTheme.typography.titleLarge) }
-    if (state.todaysFollowUps.isEmpty()) {
-      item { EmptyDashboardState("No follow-ups today.") }
-    } else {
-      items(state.todaysFollowUps) { FollowUpCard(it) }
-    }
-    item { Text("Overdue", style = MaterialTheme.typography.titleLarge) }
-    if (state.overdueFollowUps.isEmpty()) {
-      item { EmptyDashboardState("No overdue follow-ups.") }
-    } else {
-      items(state.overdueFollowUps) { FollowUpCard(it) }
-    }
-    item { Text("Upcoming", style = MaterialTheme.typography.titleLarge) }
-    if (state.upcomingFollowUps.isEmpty()) {
-      item { EmptyDashboardState("No upcoming follow-ups.") }
-    } else {
-      items(state.upcomingFollowUps.take(5)) { FollowUpCard(it) }
-    }
-  }
 }
 
 @Composable
-private fun SummaryGrid(state: HomeDashboardUiState.Success) {
-  Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-      SummaryCard("People", state.peopleCount, Modifier.weight(1f))
-      SummaryCard("Customers", state.customerCount, Modifier.weight(1f))
+private fun PlatformCard(
+    emoji: String,
+    title: String,
+    description: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    OutlinedCard(
+        onClick = onClick,
+        modifier = modifier,
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+            Text(
+                emoji,
+                style = MaterialTheme.typography.headlineSmall,
+            )
+
+            Text(
+                title,
+                style = MaterialTheme.typography.titleMedium,
+            )
+
+            Text(
+                description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-      SummaryCard("Prospects", state.prospectCount, Modifier.weight(1f))
-      SummaryCard("Partners", state.businessPartnerCount, Modifier.weight(1f))
-    }
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-      SummaryCard("Calls today", state.callsToday, Modifier.weight(1f))
-      SummaryCard("Meetings", state.meetingsToday, Modifier.weight(1f))
-    }
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-      SummaryCard("Pending tasks", state.pendingTasks, Modifier.weight(1f))
-      SummaryCard("Follow-ups today", state.followUpsToday, Modifier.weight(1f))
-    }
-  }
-}
-
-@Composable
-private fun SummaryCard(label: String, value: Int, modifier: Modifier) {
-  Card(
-    modifier = modifier,
-    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-  ) {
-    Column(Modifier.padding(12.dp)) {
-      Text(value.toString(), style = MaterialTheme.typography.headlineMedium)
-      Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-  }
-}
-
-@Composable
-private fun FollowUpCard(followUp: DashboardFollowUp) {
-  Card(
-    Modifier.fillMaxWidth(),
-    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-  ) {
-    Column(Modifier.padding(12.dp)) {
-      Text(followUp.personName, style = MaterialTheme.typography.titleMedium)
-      Text(followUp.activity.title)
-      Text(if (followUp.activity.completed) "Completed" else "Open", color = MaterialTheme.colorScheme.primary)
-    }
-  }
-}
-
-@Composable
-private fun EmptyDashboardState(message: String) {
-  Surface(Modifier.fillMaxWidth(), tonalElevation = 1.dp) {
-    Text(message, Modifier.padding(16.dp))
-  }
-}
-
-@Composable
-internal fun MainScreen(data: List<String>, modifier: Modifier = Modifier) {
-  Column(modifier) { data.forEach { Greeting(it) } }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-  Text(text = "Hello $name!", modifier = modifier)
-}
-
-@Preview(showBackground = true)
-@Composable
-fun MainScreenPreview() {
-  SalesCallTrackerTheme { MainScreen(listOf("Android")) }
-}
-
-@Preview(showBackground = true, widthDp = 340)
-@Composable
-fun MainScreenPortraitPreview() {
-  SalesCallTrackerTheme { MainScreen(listOf("Android")) }
 }
