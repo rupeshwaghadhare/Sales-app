@@ -1,0 +1,1239 @@
+
+============================================================
+FILE: .\app\src\main\java\com\example\salescalltracker\model\BusinessProfile.kt
+============================================================
+package com.example.salescalltracker.model
+
+data class BusinessProfile(
+    val id: String,
+    val businessName: String,
+    val category: String,
+    val phone: String?,
+    val whatsapp: String?,
+    val location: String?,
+    val description: String?,
+    val logoUri: String?,
+    val websiteUrl: String?,
+    val createdAt: Long,
+    val updatedAt: Long,
+)
+
+============================================================
+FILE: .\app\src\main\java\com\example\salescalltracker\data\BusinessProfileMappers.kt
+============================================================
+package com.example.salescalltracker.data
+
+import com.example.salescalltracker.model.BusinessProfile
+
+fun BusinessProfile.toEntity(): BusinessProfileEntity =
+    BusinessProfileEntity(
+        id = id,
+        businessName = businessName,
+        category = category,
+        phone = phone,
+        whatsapp = whatsapp,
+        location = location,
+        description = description,
+        logoUri = logoUri,
+        websiteUrl = websiteUrl,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+    )
+
+fun BusinessProfileEntity.toDomain(): BusinessProfile =
+    BusinessProfile(
+        id = id,
+        businessName = businessName,
+        category = category,
+        phone = phone,
+        whatsapp = whatsapp,
+        location = location,
+        description = description,
+        logoUri = logoUri,
+        websiteUrl = websiteUrl,
+        createdAt = createdAt,
+        updatedAt = updatedAt,
+    )
+
+============================================================
+FILE: .\app\src\main\java\com\example\salescalltracker\data\ActivityRepository.kt
+============================================================
+package com.example.salescalltracker.data
+
+import com.example.salescalltracker.model.Activity
+import com.example.salescalltracker.model.Person
+import com.example.salescalltracker.model.BusinessProfile
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+
+interface ActivityRepository {
+    fun observePeople(): Flow<List<Person>>
+    fun observeActivities(): Flow<List<Activity>>
+    fun observeActivitiesForPerson(personId: String): Flow<List<Activity>>
+    suspend fun upsertPerson(person: Person)
+    suspend fun deletePerson(person: Person)
+    suspend fun upsertActivity(activity: Activity)
+    suspend fun deleteActivity(activity: Activity)
+    suspend fun getPersonById(id: String): Person?
+    suspend fun getActivityById(id: String): Activity?
+    fun observeBusinessProfile(): Flow<BusinessProfile?>
+    suspend fun saveBusinessProfile(profile: BusinessProfile)
+    suspend fun getBusinessProfile(): BusinessProfile?
+    fun observeConversations(): Flow<List<Conversation>>
+    fun observeGroups(): Flow<List<Conversation>>
+    fun observeMessages(conversationId: String): Flow<List<ChatMessage>>
+    suspend fun getOrCreateConversation(personId: String): Conversation
+    suspend fun createGroup(name: String, memberIds: List<String>): Conversation
+    suspend fun sendMessage(message: ChatMessage)
+    suspend fun deleteMessage(message: ChatMessage)
+    suspend fun markConversationRead(conversationId: String)
+    suspend fun markConversationUnread(conversationId: String)
+    suspend fun setConversationPinned(conversationId: String, value: Boolean)
+    suspend fun setConversationMuted(conversationId: String, value: Boolean)
+    suspend fun setConversationArchived(conversationId: String, value: Boolean)
+}
+
+class RoomActivityRepository(
+    private val database: AppDatabase,
+) : ActivityRepository {
+
+    override fun observeBusinessProfile(): Flow<BusinessProfile?> =
+        database.businessProfileDao().observeBusiness().map { it?.toDomain() }
+
+    override suspend fun saveBusinessProfile(profile: BusinessProfile) {
+        database.businessProfileDao().upsert(profile.toEntity())
+    }
+
+    override suspend fun getBusinessProfile(): BusinessProfile? =
+        database.businessProfileDao().getBusiness()?.toDomain()
+    override fun observePeople(): Flow<List<Person>> =
+        database.personDao().observeAll().map { entities -> entities.map(PersonEntity::toDomain) }
+
+    override fun observeActivities(): Flow<List<Activity>> =
+        database.activityDao().observeAll().map { entities -> entities.map(ActivityEntity::toDomain) }
+
+    override fun observeActivitiesForPerson(personId: String): Flow<List<Activity>> =
+        database.activityDao().observeForPerson(personId).map { entities ->
+            entities.map(ActivityEntity::toDomain).sortedByDescending { it.timestamp }
+        }
+
+    override suspend fun upsertPerson(person: Person) {
+        database.personDao().upsert(person.toEntity())
+    }
+
+    override suspend fun deletePerson(person: Person) {
+        database.personDao().delete(person.toEntity())
+    }
+
+    override suspend fun upsertActivity(activity: Activity) {
+        database.activityDao().upsert(activity.toEntity())
+    }
+
+    override suspend fun deleteActivity(activity: Activity) {
+        database.activityDao().delete(activity.toEntity())
+    }
+
+    override suspend fun getPersonById(id: String): Person? =
+        database.personDao().getById(id)?.toDomain()
+
+    override suspend fun getActivityById(id: String): Activity? =
+        database.activityDao().getById(id)?.toDomain()
+
+    override fun observeConversations(): Flow<List<Conversation>> =
+        database.conversationDao().observeActive().map { entities -> entities.map(ConversationEntity::toDomain) }
+
+    override fun observeGroups(): Flow<List<Conversation>> =
+        database.conversationDao().observeByType(ConversationType.GROUP.name).map { entities ->
+            entities.map(ConversationEntity::toDomain)
+        }
+
+    override fun observeMessages(conversationId: String): Flow<List<ChatMessage>> =
+        database.chatMessageDao().observeForConversation(conversationId).map { entities -> entities.map(ChatMessageEntity::toDomain) }
+
+    override suspend fun getOrCreateConversation(personId: String): Conversation {
+        return database.conversationDao().getByPersonId(personId)?.toDomain()
+            ?: Conversation(
+                id = java.util.UUID.randomUUID().toString(),
+                personId = personId,
+                name = personId,
+                lastMessage = "",
+                lastMessageTimestamp = 0L,
+            ).also { database.conversationDao().upsert(it.toEntity()) }
+    }
+
+    override suspend fun createGroup(name: String, memberIds: List<String>): Conversation {
+        val trimmedName = name.trim()
+        require(trimmedName.isNotBlank()) { "Group name is required" }
+
+        val group = Conversation(
+            id = java.util.UUID.randomUUID().toString(),
+            personId = null,
+            name = trimmedName,
+            type = ConversationType.GROUP.name,
+            lastMessage = "",
+            lastMessageTimestamp = 0L,
+        )
+
+        database.conversationDao().upsert(group.toEntity())
+
+        val members = memberIds.distinct().map { personId ->
+            ConversationMemberEntity(
+                conversationId = group.id,
+                personId = personId,
+                role = "MEMBER",
+                joinedAt = System.currentTimeMillis(),
+            )
+        }
+
+        if (members.isNotEmpty()) {
+            database.conversationMemberDao().addMembers(members)
+        }
+
+        return group
+    }
+
+    override suspend fun sendMessage(message: ChatMessage) {
+        database.chatMessageDao().upsert(message.toEntity())
+        val conversation = database.conversationDao().getById(message.conversationId) ?: return
+        database.conversationDao().upsert(
+            conversation.copy(
+                lastMessage = message.text,
+                lastMessageTimestamp = message.timestamp,
+                unreadCount = if (message.senderType == ChatSenderType.PERSON && !message.isRead) conversation.unreadCount + 1 else conversation.unreadCount,
+            ),
+        )
+    }
+
+    override suspend fun deleteMessage(message: ChatMessage) {
+        database.chatMessageDao().delete(message.toEntity())
+        val latest = database.chatMessageDao()
+            .observeForConversation(message.conversationId)
+        val conversation = database.conversationDao().getById(message.conversationId) ?: return
+        val remaining = latest.first()
+        val newest = remaining.lastOrNull()
+        database.conversationDao().upsert(
+            conversation.copy(
+                lastMessage = newest?.text.orEmpty(),
+                lastMessageTimestamp = newest?.timestamp ?: 0L,
+            ),
+        )
+    }
+
+    override suspend fun markConversationRead(conversationId: String) {
+        database.conversationDao().markRead(conversationId)
+        database.chatMessageDao().markRead(conversationId)
+    }
+
+    override suspend fun markConversationUnread(conversationId: String) =
+        database.conversationDao().markUnread(conversationId)
+
+    override suspend fun setConversationPinned(conversationId: String, value: Boolean) =
+        database.conversationDao().setPinned(conversationId, value)
+
+    override suspend fun setConversationMuted(conversationId: String, value: Boolean) =
+        database.conversationDao().setMuted(conversationId, value)
+
+    override suspend fun setConversationArchived(conversationId: String, value: Boolean) =
+        database.conversationDao().setArchived(conversationId, value)
+}
+
+
+
+
+
+
+============================================================
+FILE: .\app\src\main\java\com\example\salescalltracker\data\AppDatabase.kt
+============================================================
+package com.example.salescalltracker.data
+
+import android.content.Context
+import androidx.room.Database
+import androidx.room.Room
+import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
+
+@Database(
+    entities = [
+        PersonEntity::class,
+        ActivityEntity::class,
+        ConversationEntity::class,
+        ConversationMemberEntity::class,
+        ChatMessageEntity::class,
+        BusinessProfileEntity::class,
+        OfferingEntity::class
+    ],
+    version = 6,
+    exportSchema = false,
+)
+abstract class AppDatabase : RoomDatabase() {
+
+    abstract fun personDao(): PersonDao
+    abstract fun activityDao(): ActivityDao
+    abstract fun conversationDao(): ConversationDao
+    abstract fun chatMessageDao(): ChatMessageDao
+    abstract fun conversationMemberDao(): ConversationMemberDao
+    abstract fun businessProfileDao(): BusinessProfileDao
+    abstract fun offeringDao(): OfferingDao
+
+    companion object {
+
+        @Volatile
+        private var INSTANCE: AppDatabase? = null
+
+        private val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE persons ADD COLUMN relationshipTypes TEXT NOT NULL DEFAULT ''"
+                )
+
+                db.execSQL(
+                    """
+                    UPDATE persons
+                    SET relationshipTypes =
+                        CASE
+                            WHEN relationshipType IS NOT NULL
+                            AND relationshipType != ''
+                            THEN relationshipType
+                            ELSE ''
+                        END
+                    """.trimIndent()
+                )
+            }
+        }
+
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS conversations (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        personId TEXT,
+                        name TEXT NOT NULL DEFAULT '',
+                        type TEXT NOT NULL DEFAULT 'DIRECT',
+                        lastMessage TEXT NOT NULL,
+                        lastMessageTimestamp INTEGER NOT NULL,
+                        unreadCount INTEGER NOT NULL,
+                        isPinned INTEGER NOT NULL,
+                        isMuted INTEGER NOT NULL,
+                        isArchived INTEGER NOT NULL,
+                        FOREIGN KEY(personId)
+                            REFERENCES persons(id)
+                            ON DELETE SET NULL
+                    )
+                    """.trimIndent()
+                )
+
+                db.execSQL(
+                    """
+                    CREATE INDEX IF NOT EXISTS
+                    index_conversations_personId
+                    ON conversations(personId)
+                    """.trimIndent()
+                )
+
+                db.execSQL(
+                    """
+                    CREATE INDEX IF NOT EXISTS
+                    index_conversations_type
+                    ON conversations(type)
+                    """.trimIndent()
+                )
+
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS chat_messages (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        conversationId TEXT NOT NULL,
+                        senderType TEXT NOT NULL,
+                        messageType TEXT NOT NULL,
+                        text TEXT NOT NULL,
+                        timestamp INTEGER NOT NULL,
+                        isRead INTEGER NOT NULL,
+                        attachmentUri TEXT,
+                        FOREIGN KEY(conversationId)
+                            REFERENCES conversations(id)
+                            ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+
+                db.execSQL(
+                    """
+                    CREATE INDEX IF NOT EXISTS
+                    index_chat_messages_conversationId
+                    ON chat_messages(conversationId)
+                    """.trimIndent()
+                )
+
+                db.execSQL(
+                    """
+                    CREATE INDEX IF NOT EXISTS
+                    index_chat_messages_timestamp
+                    ON chat_messages(timestamp)
+                    """.trimIndent()
+                )
+            }
+        }
+
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+
+            override fun migrate(db: SupportSQLiteDatabase) {
+
+                // Existing conversations are direct chats.
+                db.execSQL(
+                    """
+                    UPDATE conversations
+                    SET type = 'DIRECT'
+                    """.trimIndent()
+                )
+
+                // Existing conversations use the person's ID
+                // until the UI supplies a custom name.
+                db.execSQL(
+                    """
+                    UPDATE conversations
+                    SET name = COALESCE(personId, '')
+                    WHERE name = ''
+                    """.trimIndent()
+                )
+
+                // Remove the old unique constraint.
+                db.execSQL(
+                    """
+                    DROP INDEX IF EXISTS index_conversations_personId
+                    """.trimIndent()
+                )
+
+                // New indexes.
+                db.execSQL(
+                    """
+                    CREATE INDEX IF NOT EXISTS
+                    index_conversations_personId
+                    ON conversations(personId)
+                    """.trimIndent()
+                )
+
+                db.execSQL(
+                    """
+                    CREATE INDEX IF NOT EXISTS
+                    index_conversations_type
+                    ON conversations(type)
+                    """.trimIndent()
+                )
+
+                // Members table.
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS conversation_members (
+                        conversationId TEXT NOT NULL,
+                        personId TEXT NOT NULL,
+                        role TEXT NOT NULL DEFAULT 'MEMBER',
+                        joinedAt INTEGER NOT NULL,
+                        PRIMARY KEY(conversationId, personId),
+                        FOREIGN KEY(conversationId)
+                            REFERENCES conversations(id)
+                            ON DELETE CASCADE,
+                        FOREIGN KEY(personId)
+                            REFERENCES persons(id)
+                            ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+
+                db.execSQL(
+                    """
+                    CREATE INDEX IF NOT EXISTS
+                    index_conversation_members_conversationId
+                    ON conversation_members(conversationId)
+                    """.trimIndent()
+                )
+
+                db.execSQL(
+                    """
+                    CREATE INDEX IF NOT EXISTS
+                    index_conversation_members_personId
+                    ON conversation_members(personId)
+                    """.trimIndent()
+                )
+            }
+        }
+
+        private val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS business_profiles (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        businessName TEXT NOT NULL,
+                        category TEXT NOT NULL,
+                        phone TEXT,
+                        whatsapp TEXT,
+                        location TEXT,
+                        description TEXT,
+                        logoUri TEXT,
+                        websiteUrl TEXT,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+            }
+        }
+
+        private val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS offerings (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        ownerId TEXT NOT NULL,
+                        workspaceId TEXT,
+                        title TEXT NOT NULL,
+                        description TEXT NOT NULL,
+                        type TEXT NOT NULL,
+                        price REAL,
+                        currency TEXT NOT NULL,
+                        location TEXT,
+                        imageUri TEXT,
+                        contact TEXT,
+                        websiteUrl TEXT,
+                        isActive INTEGER NOT NULL,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_offerings_ownerId ON offerings(ownerId)"
+                )
+
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_offerings_workspaceId ON offerings(workspaceId)"
+                )
+
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_offerings_type ON offerings(type)"
+                )
+
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_offerings_location ON offerings(location)"
+                )
+
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_offerings_isActive ON offerings(isActive)"
+                )
+            }
+        }
+        fun getInstance(context: Context): AppDatabase =
+            INSTANCE ?: synchronized(this) {
+
+                INSTANCE ?: Room.databaseBuilder(
+                    context.applicationContext,
+                    AppDatabase::class.java,
+                    "sales_activity_db",
+                )
+                    .addMigrations(
+                        MIGRATION_1_2,
+                        MIGRATION_2_3,
+                        MIGRATION_3_4,
+                        MIGRATION_4_5,
+                        MIGRATION_5_6
+                    )
+                    .build()
+                    .also {
+                        INSTANCE = it
+                    }
+            }
+    }
+}
+
+
+
+
+
+
+============================================================
+FILE: .\app\src\main\java\com\example\salescalltracker\data\BusinessProfileDao.kt
+============================================================
+package com.example.salescalltracker.data
+
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface BusinessProfileDao {
+
+    @Query("SELECT * FROM business_profiles ORDER BY updatedAt DESC LIMIT 1")
+    fun observeBusiness(): Flow<BusinessProfileEntity?>
+
+    @Query("SELECT * FROM business_profiles ORDER BY updatedAt DESC LIMIT 1")
+    suspend fun getBusiness(): BusinessProfileEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(business: BusinessProfileEntity)
+
+    @Delete
+    suspend fun delete(business: BusinessProfileEntity)
+}
+
+============================================================
+FILE: .\app\src\main\java\com\example\salescalltracker\ui\business\BusinessProfileViewModel.kt
+============================================================
+package com.example.salescalltracker.ui.business
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.salescalltracker.data.ActivityRepository
+import com.example.salescalltracker.model.BusinessProfile
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import java.util.UUID
+
+class BusinessProfileViewModel(
+    private val repository: ActivityRepository,
+) : ViewModel() {
+
+    val businessProfile: StateFlow<BusinessProfile?> =
+        repository.observeBusinessProfile()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = null,
+            )
+
+    fun saveBusiness(
+        businessName: String,
+        category: String,
+        phone: String,
+        whatsapp: String,
+        location: String,
+        description: String,
+        websiteUrl: String,
+    ) {
+        if (businessName.isBlank()) return
+
+        val now = System.currentTimeMillis()
+        val existing = businessProfile.value
+
+        val profile = BusinessProfile(
+            id = existing?.id ?: UUID.randomUUID().toString(),
+            businessName = businessName.trim(),
+            category = category.trim(),
+            phone = phone.trim().takeIf { it.isNotBlank() },
+            whatsapp = whatsapp.trim().takeIf { it.isNotBlank() },
+            location = location.trim().takeIf { it.isNotBlank() },
+            description = description.trim().takeIf { it.isNotBlank() },
+            logoUri = existing?.logoUri,
+            websiteUrl = websiteUrl.trim().takeIf { it.isNotBlank() },
+            createdAt = existing?.createdAt ?: now,
+            updatedAt = now,
+        )
+
+        viewModelScope.launch {
+            repository.saveBusinessProfile(profile)
+        }
+    }
+}
+
+[FILE NOT FOUND] .\app\src\main\java\com\example\salescalltracker\ui\business\BusinessProfileScreen.kt
+
+============================================================
+FILE: .\app\src\main\java\com\example\salescalltracker\ui\platform\PlatformScreens.kt
+============================================================
+package com.example.salescalltracker.ui.platform
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+
+@Composable
+fun BusinessProfileScreen(onBack: () -> Unit = {}) {
+    PlatformPage(
+        "?? My Business",
+        "Create and manage your digital business identity.",
+        listOf(
+            "Business Identity" to "Business name, category, description and unique ID.",
+            "Contact Details" to "Phone, WhatsApp and website.",
+            "Location" to "Add your shop, office or service location.",
+            "Products & Services" to "Show what you offer.",
+            "Promote" to "Create campaigns and collaborate with creators."
+        ),
+        onBack
+    )
+}
+
+@Composable
+fun MarketplaceScreen(onBack: () -> Unit = {}) {
+    PlatformPage(
+        "?? Marketplace",
+        "Discover products, services, businesses and opportunities.",
+        listOf(
+            "Products" to "Discover physical and digital products.",
+            "Services" to "Find freelancers and professional services.",
+            "Businesses" to "Discover local and online businesses.",
+            "Franchise" to "Explore franchise opportunities."
+        ),
+        onBack
+    )
+}
+
+@Composable
+fun CampaignsScreen(onBack: () -> Unit = {}) {
+    PlatformPage(
+        "?? Campaigns",
+        "Discover campaigns from brands and businesses.",
+        listOf(
+            "Local Campaigns" to "Find campaigns running near you.",
+            "Creator Campaigns" to "Find brand collaboration opportunities.",
+            "Promote a Business" to "Create promotional campaigns.",
+            "Track Results" to "Track campaign performance."
+        ),
+        onBack
+    )
+}
+
+@Composable
+fun ServicesScreen(onBack: () -> Unit = {}) {
+    PlatformPage(
+        "?? Services",
+        "Discover and offer professional services.",
+        listOf(
+            "My Services" to "Create and manage your services.",
+            "Find Services" to "Find freelancers and professionals.",
+            "Projects" to "Discover work and collaboration opportunities."
+        ),
+        onBack
+    )
+}
+
+@Composable
+fun ProductsScreen(onBack: () -> Unit = {}) {
+    PlatformPage(
+        "??? Products",
+        "Create, manage and discover products.",
+        listOf(
+            "My Products" to "Manage products and prices.",
+            "Digital Products" to "Sell PDFs, templates and courses.",
+            "Used Products" to "List products you no longer need."
+        ),
+        onBack
+    )
+}
+
+@Composable
+fun WebsiteScreen(onBack: () -> Unit = {}) {
+    PlatformPage(
+        "?? Website",
+        "Create a simple online presence.",
+        listOf(
+            "Create Website" to "Build a website using templates.",
+            "Business Page" to "Show your business, products and services.",
+            "Share Link" to "Share your public page."
+        ),
+        onBack
+    )
+}
+
+@Composable
+fun LocationsScreen(onBack: () -> Unit = {}) {
+    PlatformPage(
+        "?? Locations & Events",
+        "Discover local businesses, places and events.",
+        listOf(
+            "Nearby Businesses" to "Find businesses around your location.",
+            "Events" to "Discover local events.",
+            "My Locations" to "Manage business and event locations."
+        ),
+        onBack
+    )
+}
+
+@Composable
+private fun PlatformPage(
+    title: String,
+    description: String,
+    actions: List<Pair<String, String>>,
+    onBack: () -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(20.dp),
+        contentPadding = PaddingValues(bottom = 30.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item {
+            Text(
+                title,
+                style = MaterialTheme.typography.headlineMedium
+            )
+        }
+
+        item {
+            Text(
+                description,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        items(actions.size) { index ->
+            val action = actions[index]
+
+            OutlinedCard(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = {}
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    Text(
+                        action.first,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+
+                    Text(
+                        action.second,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
+        item {
+            Button(
+                onClick = onBack,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Back")
+            }
+        }
+    }
+}
+
+============================================================
+FILE: .\app\src\main\java\com\example\salescalltracker\NavigationKeys.kt
+============================================================
+package com.example.salescalltracker
+
+import androidx.navigation3.runtime.NavKey
+import kotlinx.serialization.Serializable
+
+@Serializable data object Main : NavKey
+@Serializable data object Discover : NavKey
+@Serializable data object Create : NavKey
+@Serializable data object Connect : NavKey
+@Serializable data object Chats : NavKey
+@Serializable data object Profile : NavKey
+
+@Serializable data object People : NavKey
+@Serializable data object Calls : NavKey
+@Serializable data object More : NavKey
+@Serializable data object Earn : NavKey
+
+@Serializable data object BusinessProfile : NavKey
+@Serializable data object Marketplace : NavKey
+@Serializable data object Campaigns : NavKey
+@Serializable data object Services : NavKey
+@Serializable data object Products : NavKey
+@Serializable data object Website : NavKey
+@Serializable data object Locations : NavKey
+@Serializable data object EventSearch : NavKey
+@Serializable data class CreateOffering(val type: String) : NavKey
+
+@Serializable data class ChatConversation(
+    val conversationId: String,
+) : NavKey
+
+@Serializable data class CallDetails(
+    val number: String,
+) : NavKey
+
+
+
+
+============================================================
+FILE: .\app\src\main\java\com\example\salescalltracker\Navigation.kt
+============================================================
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
+package com.example.salescalltracker
+
+import com.example.salescalltracker.ui.calls.CallLogScreen
+import com.example.salescalltracker.ui.calls.CallDetailsScreen
+
+import com.example.salescalltracker.ui.profile.ProfileScreen
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.ui.NavDisplay
+import com.example.salescalltracker.data.ActivityRepository
+import com.example.salescalltracker.ui.chat.ChatListScreen
+import com.example.salescalltracker.ui.chat.ChatScreen
+import com.example.salescalltracker.ui.main.MainScreen
+import com.example.salescalltracker.ui.earn.EarnHubScreen
+import com.example.salescalltracker.ui.people.PeopleScreen
+import com.example.salescalltracker.ui.discover.DiscoverScreen
+import com.example.salescalltracker.ui.create.CreateScreen
+import com.example.salescalltracker.ui.events.EventSearchScreen
+import com.example.salescalltracker.ui.locations.LocationSearchScreen
+import com.example.salescalltracker.ui.create.OfferingCreateScreen
+import com.example.salescalltracker.ui.platform.*
+import com.example.salescalltracker.ui.connect.ConnectScreen
+
+data class NavigationCall(
+  val number: String,
+  val type: String,
+  val date: String,
+  val duration: String,
+)
+
+@Composable
+fun MainNavigation(
+  repository: ActivityRepository,
+  calls: List<SalesCall>,
+  onLoadCalls: () -> Unit,
+) {
+  val backStack = rememberNavBackStack(Main)
+
+  Scaffold(
+    bottomBar = {
+      NavigationBar {
+        NavigationBarItem(
+          selected = backStack.lastOrNull() == Main,
+          onClick = { backStack.replaceTop(Main) },
+          icon = { Text("??") },
+          label = { Text("Home") },
+        )
+
+        NavigationBarItem(
+          selected = backStack.lastOrNull() == Discover,
+          onClick = { backStack.replaceTop(Discover) },
+          icon = { Text("??") },
+          label = { Text("Discover") },
+        )
+
+        NavigationBarItem(
+          selected = backStack.lastOrNull() == Create,
+          onClick = { backStack.replaceTop(Create) },
+          icon = { Text("+") },
+          label = { Text("Create") },
+        )
+
+        NavigationBarItem(
+          selected = backStack.lastOrNull() == Connect,
+          onClick = { backStack.replaceTop(Connect) },
+          icon = { Text("??") },
+          label = { Text("Connect") },
+        )
+
+        NavigationBarItem(
+          selected = backStack.lastOrNull() == Profile,
+          onClick = { backStack.replaceTop(Profile) },
+          icon = { Text("??") },
+          label = { Text("Profile") },
+        )
+      }
+    },
+  ) { paddingValues ->
+    NavDisplay(
+      backStack = backStack,
+      onBack = { backStack.removeLastOrNull() },
+      entryProvider =
+        entryProvider {
+          entry<Main> {
+            MainScreen(
+              onItemClick = { navKey -> backStack.add(navKey) },
+              repository = repository,
+            )
+          }
+          entry<Discover> {
+            DiscoverScreen(
+              onMarketplaceClick = { backStack.add(Marketplace) },
+              onCampaignsClick = { backStack.add(Campaigns) },
+            )
+          }
+
+          entry<Create> {
+            CreateScreen(
+              onBusinessClick = { backStack.add(BusinessProfile) },
+              onOfferingClick = { type ->
+                backStack.add(CreateOffering(type))
+              },
+            )
+          }
+
+          entry<Connect> {
+            ConnectScreen(
+              onChatsClick = { backStack.add(Chats) },
+              onPeopleClick = { backStack.add(People) },
+              onCallsClick = { backStack.add(Calls) },
+            )
+          }
+
+          entry<Profile> {
+            ProfileScreen()
+          }
+          entry<CreateOffering> { key ->
+            OfferingCreateScreen(
+              type = key.type,
+              onBack = { backStack.removeLastOrNull() },
+            )
+          }
+          entry<EventSearch> {
+            EventSearchScreen(
+              city = "Pune",
+              onBack = { backStack.removeLastOrNull() },
+            )
+          }
+
+          entry<Locations> {
+            LocationSearchScreen(
+              onBack = { backStack.removeLastOrNull() },
+            )
+          }
+          entry<BusinessProfile> {
+            BusinessProfileScreen(
+              onBack = { backStack.removeLastOrNull() },
+            )
+          }
+
+          entry<Marketplace> {
+            MarketplaceScreen(
+              onBack = { backStack.removeLastOrNull() },
+            )
+          }
+
+          entry<Campaigns> {
+            CampaignsScreen(
+              onBack = { backStack.removeLastOrNull() },
+            )
+          }
+
+          entry<Services> {
+            ServicesScreen(
+              onBack = { backStack.removeLastOrNull() },
+            )
+          }
+
+          entry<Products> {
+            ProductsScreen(
+              onBack = { backStack.removeLastOrNull() },
+            )
+          }
+
+          entry<Website> {
+            WebsiteScreen(
+              onBack = { backStack.removeLastOrNull() },
+            )
+          }
+
+
+          entry<People> {
+            PeopleScreen(repository = repository)
+          }
+          entry<Chats> {
+            ChatListScreen(
+              repository = repository,
+              onOpenConversation = { conversationId -> backStack.add(ChatConversation(conversationId)) },
+            )
+          }
+          entry<ChatConversation> { key ->
+            ChatScreen(
+              conversationId = key.conversationId,
+              repository = repository,
+              onBack = { backStack.removeLastOrNull() },
+            )
+          }
+          entry<Calls> {
+            CallLogScreen(
+              calls = calls,
+              onLoadCalls = onLoadCalls,
+              onViewDetails = { number -> backStack.add(CallDetails(number)) },
+            )
+          }
+          entry<CallDetails> { key ->
+            CallDetailsScreen(
+              number = key.number,
+              calls = calls,
+              onBack = { backStack.removeLastOrNull() },
+            )
+          }
+          entry<Earn> {
+            EarnHubScreen()
+          }
+          entry<More> {
+            MoreScreen(onEarnClick = { backStack.add(Earn) })
+          }
+        },
+    )
+  }
+}
+
+private fun <T> MutableList<T>.replaceTop(destination: T) {
+  if (isEmpty()) add(destination) else this[lastIndex] = destination
+}
+
+@Composable
+private fun MoreScreen(onEarnClick: () -> Unit = {}) {
+  Scaffold(
+    topBar = {
+      androidx.compose.material3.TopAppBar(
+        title = { Text("More") }
+      )
+    },
+  ) { paddingValues ->
+    androidx.compose.foundation.lazy.LazyColumn(
+      modifier = Modifier
+        .padding(paddingValues)
+        .padding(horizontal = 16.dp),
+      verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+
+      item {
+        androidx.compose.material3.Card(
+          modifier = Modifier.fillMaxWidth(),
+        ) {
+          Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+          ) {
+            Text("?? Profile", style = androidx.compose.material3.MaterialTheme.typography.titleLarge)
+            Text(
+              "Manage your personal and business profile",
+              color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+          }
+        }
+      }
+
+      item { Text("Earn", style = androidx.compose.material3.MaterialTheme.typography.titleMedium) }
+
+      item {
+        MoreMenuItem("?? Earn Hub", "Find ways to earn through sales, services and referrals", onClick = onEarnClick)
+      }
+
+      item {
+        MoreMenuItem("?? Opportunities", "Find jobs, leads, projects and business opportunities")
+      }
+
+      item {
+        MoreMenuItem("?? Refer & Earn", "Refer products and services and track commissions")
+      }
+
+      item { Text("Commerce", style = androidx.compose.material3.MaterialTheme.typography.titleMedium) }
+
+      item {
+        MoreMenuItem("?? Marketplace", "Buy and sell products and services")
+      }
+
+      item {
+        MoreMenuItem("?? Digital Products", "Sell PDFs, templates, courses and digital products")
+      }
+
+      item { Text("Create", style = androidx.compose.material3.MaterialTheme.typography.titleMedium) }
+
+      item {
+        MoreMenuItem("?? Mini App Builder", "Create simple business apps without coding")
+      }
+
+      item {
+        MoreMenuItem("?? Website & Store", "Create a business website or online store")
+      }
+
+      item { Text("Business", style = androidx.compose.material3.MaterialTheme.typography.titleMedium) }
+
+      item {
+        MoreMenuItem("?? Leads & Customers", "Manage leads, customers and sales")
+      }
+
+      item {
+        MoreMenuItem("?? Tasks & Meetings", "Manage follow-ups, tasks and meetings")
+      }
+
+      item {
+        MoreMenuItem("?? Team & Groups", "Collaborate with your team and business partners")
+      }
+
+      item { Text("Money", style = androidx.compose.material3.MaterialTheme.typography.titleMedium) }
+
+      item {
+        MoreMenuItem("?? Wallet & Earnings", "Track earnings, transactions and payouts")
+      }
+
+      item { Text("Settings", style = androidx.compose.material3.MaterialTheme.typography.titleMedium) }
+
+      item {
+        MoreMenuItem("?? Settings", "Account, notifications, privacy, security and help")
+      }
+    }
+  }
+}
+
+@Composable
+private fun MoreMenuItem(
+  title: String,
+  description: String,
+  onClick: () -> Unit = {},
+) {
+  androidx.compose.material3.OutlinedCard(
+    onClick = onClick,
+    modifier = Modifier.fillMaxWidth(),
+  ) {
+    Column(
+      modifier = Modifier.padding(16.dp),
+      verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+      Text(
+        title,
+        style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
+      )
+      Text(
+        description,
+        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+      )
+    }
+  }
+}
+
+
+
+
+
+
+
+
+

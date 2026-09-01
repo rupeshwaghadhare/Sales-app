@@ -2,9 +2,12 @@
 import com.example.salescalltracker.model.BusinessProfile
 
 import com.example.salescalltracker.data.ActivityRepository
+import com.example.salescalltracker.data.ChatMessage
 import com.example.salescalltracker.model.Activity
 import com.example.salescalltracker.model.ActivityType
 import com.example.salescalltracker.model.Person
+import com.example.salescalltracker.model.Offering
+import com.example.salescalltracker.model.OfferingType
 import com.example.salescalltracker.model.RelationshipType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -164,80 +167,168 @@ class PeopleViewModelTest {
 }
 
 private class FakePeopleRepository : ActivityRepository {
-    override fun observeGroups(): Flow<List<Conversation>> = flowOf(emptyList())
-
-    override suspend fun createGroup(name: String, memberIds: List<String>): Conversation {
-        throw UnsupportedOperationException("Not used in PeopleViewModelTest")
-    }
 
     private val peopleFlow = MutableStateFlow<List<Person>>(emptyList())
     private val activitiesFlow = MutableStateFlow<List<Activity>>(emptyList())
+    private val offeringsFlow = MutableStateFlow<List<Offering>>(emptyList())
 
-    override fun observePeople(): Flow<List<Person>> = peopleFlow
+    override fun observeGroups(): Flow<List<Conversation>> =
+        flowOf(emptyList())
 
-    override fun observeActivities(): Flow<List<Activity>> = activitiesFlow
+    override suspend fun createGroup(
+        name: String,
+        memberIds: List<String>,
+    ): Conversation {
+        throw UnsupportedOperationException("Not used in PeopleViewModelTest")
+    }
 
-    override fun observeActivitiesForPerson(personId: String): Flow<List<Activity>> =
-        activitiesFlow.map { activities -> activities.filter { it.personId == personId } }
+    override fun observePeople(): Flow<List<Person>> =
+        peopleFlow
+
+    override fun observeActivities(): Flow<List<Activity>> =
+        activitiesFlow
+
+    override fun observeActivitiesForPerson(
+        personId: String,
+    ): Flow<List<Activity>> =
+        activitiesFlow.map { activities ->
+            activities.filter { it.personId == personId }
+        }
 
     override suspend fun upsertPerson(person: Person) {
         val current = peopleFlow.value.toMutableList()
         val index = current.indexOfFirst { it.id == person.id }
-        if (index >= 0) current[index] = person else current.add(person)
+
+        if (index >= 0) {
+            current[index] = person
+        } else {
+            current.add(person)
+        }
+
         peopleFlow.value = current
     }
 
     override suspend fun deletePerson(person: Person) {
-        peopleFlow.value = peopleFlow.value.filterNot { it.id == person.id }
-        activitiesFlow.value = activitiesFlow.value.filterNot { it.personId == person.id }
+        peopleFlow.value =
+            peopleFlow.value.filterNot { it.id == person.id }
+
+        activitiesFlow.value =
+            activitiesFlow.value.filterNot { it.personId == person.id }
     }
 
     override suspend fun upsertActivity(activity: Activity) {
         val current = activitiesFlow.value.toMutableList()
         val index = current.indexOfFirst { it.id == activity.id }
-        if (index >= 0) current[index] = activity else current.add(activity)
+
+        if (index >= 0) {
+            current[index] = activity
+        } else {
+            current.add(activity)
+        }
+
         activitiesFlow.value = current
     }
 
     override suspend fun deleteActivity(activity: Activity) {
-        activitiesFlow.value = activitiesFlow.value.filterNot { it.id == activity.id }
+        activitiesFlow.value =
+            activitiesFlow.value.filterNot { it.id == activity.id }
     }
 
-    override suspend fun getPersonById(id: String): Person? = peopleFlow.value.firstOrNull { it.id == id }
+    override suspend fun getPersonById(id: String): Person? =
+        peopleFlow.value.firstOrNull { it.id == id }
 
-    override suspend fun getActivityById(id: String): Activity? = activitiesFlow.value.firstOrNull { it.id == id }
+    override suspend fun getActivityById(id: String): Activity? =
+        activitiesFlow.value.firstOrNull { it.id == id }
 
-    override fun observeConversations(): Flow<List<com.example.salescalltracker.data.Conversation>> = kotlinx.coroutines.flow.emptyFlow()
-
-    override fun observeMessages(conversationId: String): Flow<List<com.example.salescalltracker.data.ChatMessage>> = kotlinx.coroutines.flow.emptyFlow()
-
-    override suspend fun getOrCreateConversation(personId: String) = error("Not used in PeopleViewModelTest")
-
-    override suspend fun sendMessage(message: com.example.salescalltracker.data.ChatMessage) = Unit
-
-    override suspend fun deleteMessage(message: com.example.salescalltracker.data.ChatMessage) = Unit
-
-    override suspend fun markConversationRead(conversationId: String) = Unit
-
-    override suspend fun markConversationUnread(conversationId: String) = Unit
-
-    override suspend fun setConversationPinned(conversationId: String, value: Boolean) = Unit
-
-    override suspend fun setConversationMuted(conversationId: String, value: Boolean) = Unit
-
-    override suspend fun setConversationArchived(conversationId: String, value: Boolean) = Unit
     override fun observeBusinessProfile(): Flow<BusinessProfile?> =
         flowOf(null)
 
     override suspend fun saveBusinessProfile(profile: BusinessProfile) = Unit
 
     override suspend fun getBusinessProfile(): BusinessProfile? = null
+
+    override fun observeOfferings(): Flow<List<Offering>> =
+        offeringsFlow
+
+    override fun observeOfferingsForOwner(
+        ownerId: String,
+    ): Flow<List<Offering>> =
+        offeringsFlow.map { offerings ->
+            offerings.filter { it.ownerId == ownerId }
+        }
+
+    override fun observeOfferingsByType(
+        type: OfferingType,
+    ): Flow<List<Offering>> =
+        offeringsFlow.map { offerings ->
+            offerings.filter { it.type == type }
+        }
+
+    override suspend fun getOfferingById(
+        id: String,
+    ): Offering? =
+        offeringsFlow.value.firstOrNull { it.id == id }
+
+    override suspend fun saveOffering(offering: Offering) {
+        val current = offeringsFlow.value.toMutableList()
+        val index = current.indexOfFirst { it.id == offering.id }
+
+        if (index >= 0) {
+            current[index] = offering
+        } else {
+            current.add(offering)
+        }
+
+        offeringsFlow.value = current
+    }
+
+    override suspend fun deleteOffering(offering: Offering) {
+        offeringsFlow.value =
+            offeringsFlow.value.filterNot { it.id == offering.id }
+    }
+
+    override fun observeConversations(): Flow<List<Conversation>> =
+        kotlinx.coroutines.flow.emptyFlow()
+
+    override fun observeMessages(
+        conversationId: String,
+    ): Flow<List<ChatMessage>> =
+        kotlinx.coroutines.flow.emptyFlow()
+
+    override suspend fun getOrCreateConversation(
+        personId: String,
+    ): Conversation =
+        error("Not used in PeopleViewModelTest")
+
+    override suspend fun sendMessage(
+        message: ChatMessage,
+    ) = Unit
+
+    override suspend fun deleteMessage(
+        message: ChatMessage,
+    ) = Unit
+
+    override suspend fun markConversationRead(
+        conversationId: String,
+    ) = Unit
+
+    override suspend fun markConversationUnread(
+        conversationId: String,
+    ) = Unit
+
+    override suspend fun setConversationPinned(
+        conversationId: String,
+        value: Boolean,
+    ) = Unit
+
+    override suspend fun setConversationMuted(
+        conversationId: String,
+        value: Boolean,
+    ) = Unit
+
+    override suspend fun setConversationArchived(
+        conversationId: String,
+        value: Boolean,
+    ) = Unit
 }
-
-
-
-
-
-
-
 

@@ -3,6 +3,8 @@
 import com.example.salescalltracker.model.Activity
 import com.example.salescalltracker.model.Person
 import com.example.salescalltracker.model.BusinessProfile
+import com.example.salescalltracker.model.Offering
+import com.example.salescalltracker.model.OfferingType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -20,6 +22,12 @@ interface ActivityRepository {
     fun observeBusinessProfile(): Flow<BusinessProfile?>
     suspend fun saveBusinessProfile(profile: BusinessProfile)
     suspend fun getBusinessProfile(): BusinessProfile?
+    fun observeOfferings(): Flow<List<Offering>>
+    fun observeOfferingsForOwner(ownerId: String): Flow<List<Offering>>
+    fun observeOfferingsByType(type: OfferingType): Flow<List<Offering>>
+    suspend fun getOfferingById(id: String): Offering?
+    suspend fun saveOffering(offering: Offering)
+    suspend fun deleteOffering(offering: Offering)
     fun observeConversations(): Flow<List<Conversation>>
     fun observeGroups(): Flow<List<Conversation>>
     fun observeMessages(conversationId: String): Flow<List<ChatMessage>>
@@ -47,6 +55,33 @@ class RoomActivityRepository(
 
     override suspend fun getBusinessProfile(): BusinessProfile? =
         database.businessProfileDao().getBusiness()?.toDomain()
+    override fun observeOfferings(): Flow<List<Offering>> =
+        database.offeringDao()
+            .observeAll()
+            .map { entities -> entities.map(OfferingEntity::toDomain) }
+
+    override fun observeOfferingsForOwner(ownerId: String): Flow<List<Offering>> =
+        database.offeringDao()
+            .observeForOwner(ownerId)
+            .map { entities -> entities.map(OfferingEntity::toDomain) }
+
+    override fun observeOfferingsByType(type: OfferingType): Flow<List<Offering>> =
+        database.offeringDao()
+            .observeByType(type.name)
+            .map { entities -> entities.map(OfferingEntity::toDomain) }
+
+    override suspend fun getOfferingById(id: String): Offering? =
+        database.offeringDao()
+            .getById(id)
+            ?.toDomain()
+
+    override suspend fun saveOffering(offering: Offering) {
+        database.offeringDao().upsert(offering.toEntity())
+    }
+
+    override suspend fun deleteOffering(offering: Offering) {
+        database.offeringDao().delete(offering.toEntity())
+    }
     override fun observePeople(): Flow<List<Person>> =
         database.personDao().observeAll().map { entities -> entities.map(PersonEntity::toDomain) }
 
@@ -177,6 +212,8 @@ class RoomActivityRepository(
     override suspend fun setConversationArchived(conversationId: String, value: Boolean) =
         database.conversationDao().setArchived(conversationId, value)
 }
+
+
 
 
 
