@@ -29,6 +29,7 @@ import com.example.salescalltracker.ui.earn.EarnHubScreen
 import com.example.salescalltracker.ui.people.PeopleScreen
 import com.example.salescalltracker.ui.discover.DiscoverScreen
 import com.example.salescalltracker.ui.create.CreateScreen
+import com.example.salescalltracker.ui.platform.*
 import com.example.salescalltracker.ui.connect.ConnectScreen
 
 data class NavigationCall(
@@ -120,6 +121,47 @@ fun MainNavigation(
 
           entry<Profile> {
             ProfileScreen()
+          }
+          entry<BusinessProfile> {
+            BusinessProfileScreen(
+              onBack = { backStack.removeLastOrNull() },
+            )
+          }
+
+          entry<Marketplace> {
+            MarketplaceScreen(
+              onBack = { backStack.removeLastOrNull() },
+            )
+          }
+
+          entry<Campaigns> {
+            CampaignsScreen(
+              onBack = { backStack.removeLastOrNull() },
+            )
+          }
+
+          entry<Services> {
+            ServicesScreen(
+              onBack = { backStack.removeLastOrNull() },
+            )
+          }
+
+          entry<Products> {
+            ProductsScreen(
+              onBack = { backStack.removeLastOrNull() },
+            )
+          }
+
+          entry<Website> {
+            WebsiteScreen(
+              onBack = { backStack.removeLastOrNull() },
+            )
+          }
+
+          entry<Locations> {
+            LocationsScreen(
+              onBack = { backStack.removeLastOrNull() },
+            )
           }
           entry<People> {
             PeopleScreen(repository = repository)
@@ -287,6 +329,7 @@ private fun MoreMenuItem(
     }
   }
 }
+
 
 
 
