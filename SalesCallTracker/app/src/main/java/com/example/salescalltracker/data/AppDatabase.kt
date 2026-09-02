@@ -15,9 +15,10 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         ConversationMemberEntity::class,
         ChatMessageEntity::class,
         BusinessProfileEntity::class,
-        OfferingEntity::class
+        OfferingEntity::class,
+        MediaAttachmentEntity::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = false,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -29,6 +30,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun conversationMemberDao(): ConversationMemberDao
     abstract fun businessProfileDao(): BusinessProfileDao
     abstract fun offeringDao(): OfferingDao
+    abstract fun mediaAttachmentDao(): MediaAttachmentDao
 
     companion object {
 
@@ -281,7 +283,53 @@ abstract class AppDatabase : RoomDatabase() {
                 )
             }
         }
-        fun getInstance(context: Context): AppDatabase =
+
+
+          private val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS media_attachments (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        workspaceId TEXT,
+                        ownerId TEXT NOT NULL,
+                        ownerType TEXT NOT NULL,
+                        type TEXT NOT NULL,
+                        uri TEXT,
+                        title TEXT,
+                        description TEXT,
+                        sortOrder INTEGER NOT NULL,
+                        createdAt INTEGER NOT NULL
+                    )
+                    """.trimIndent()
+                )
+
+                db.execSQL(
+                    """
+                    CREATE INDEX IF NOT EXISTS
+                    index_media_attachments_ownerId
+                    ON media_attachments(ownerId)
+                    """.trimIndent()
+                )
+
+                db.execSQL(
+                    """
+                    CREATE INDEX IF NOT EXISTS
+                    index_media_attachments_ownerType
+                    ON media_attachments(ownerType)
+                    """.trimIndent()
+                )
+
+                db.execSQL(
+                    """
+                    CREATE INDEX IF NOT EXISTS
+                    index_media_attachments_workspaceId
+                    ON media_attachments(workspaceId)
+                    """.trimIndent()
+                )
+            }
+        }
+      fun getInstance(context: Context): AppDatabase =
             INSTANCE ?: synchronized(this) {
 
                 INSTANCE ?: Room.databaseBuilder(
@@ -294,7 +342,8 @@ abstract class AppDatabase : RoomDatabase() {
                         MIGRATION_2_3,
                         MIGRATION_3_4,
                         MIGRATION_4_5,
-                        MIGRATION_5_6
+                        MIGRATION_5_6,
+                        MIGRATION_6_7
                     )
                     .build()
                     .also {

@@ -1,6 +1,6 @@
 ﻿package com.example.salescalltracker.ui.people
 import com.example.salescalltracker.model.BusinessProfile
-
+import com.example.salescalltracker.data.MediaAttachmentEntity
 import com.example.salescalltracker.data.ActivityRepository
 import com.example.salescalltracker.data.ChatMessage
 import com.example.salescalltracker.model.Activity
@@ -169,6 +169,7 @@ class PeopleViewModelTest {
 private class FakePeopleRepository : ActivityRepository {
 
     private val peopleFlow = MutableStateFlow<List<Person>>(emptyList())
+    private val mediaFlow = MutableStateFlow<List<MediaAttachmentEntity>>(emptyList())
     private val activitiesFlow = MutableStateFlow<List<Activity>>(emptyList())
     private val offeringsFlow = MutableStateFlow<List<Offering>>(emptyList())
 
@@ -285,6 +286,45 @@ private class FakePeopleRepository : ActivityRepository {
     override suspend fun deleteOffering(offering: Offering) {
         offeringsFlow.value =
             offeringsFlow.value.filterNot { it.id == offering.id }
+    }
+        override fun observeMediaForOwner(
+        ownerId: String,
+        ownerType: String,
+    ): Flow<List<MediaAttachmentEntity>> =
+        mediaFlow.map { media ->
+            media.filter {
+                it.ownerId == ownerId &&
+                    it.ownerType == ownerType
+            }
+        }
+
+    override suspend fun saveMedia(media: MediaAttachmentEntity) {
+        val current = mediaFlow.value.toMutableList()
+        val index = current.indexOfFirst { it.id == media.id }
+
+        if (index >= 0) {
+            current[index] = media
+        } else {
+            current.add(media)
+        }
+
+        mediaFlow.value = current
+    }
+
+    override suspend fun deleteMedia(media: MediaAttachmentEntity) {
+        mediaFlow.value =
+            mediaFlow.value.filterNot { it.id == media.id }
+    }
+
+    override suspend fun deleteMediaForOwner(
+        ownerId: String,
+        ownerType: String,
+    ) {
+        mediaFlow.value =
+            mediaFlow.value.filterNot {
+                it.ownerId == ownerId &&
+                    it.ownerType == ownerType
+            }
     }
 
     override fun observeConversations(): Flow<List<Conversation>> =

@@ -83,31 +83,13 @@ class RoomActivityRepository(
         database.offeringDao().upsert(offering.toEntity())
     }
 
-    override suspend fun deleteOffering(offering: Offering) {
+    override fun observeMediaForOwner(ownerId: String, ownerType: String): Flow<List<MediaAttachmentEntity>>`r`n    suspend fun saveMedia(media: MediaAttachmentEntity)`r`n    suspend fun deleteMedia(media: MediaAttachmentEntity)`r`n    suspend fun deleteMediaForOwner(ownerId: String, ownerType: String)`r`n    suspend fun deleteOffering(offering: Offering)
+    fun observeMediaForOwner(ownerId: String, ownerType: String): Flow<List<MediaAttachmentEntity>>
+    suspend fun saveMedia(media: MediaAttachmentEntity)
+    suspend fun deleteMedia(media: MediaAttachmentEntity)
+    suspend fun deleteMediaForOwner(ownerId: String, ownerType: String) {
         database.offeringDao().delete(offering.toEntity())
     }
-
-    override fun observeMediaForOwner(
-        ownerId: String,
-        ownerType: String
-    ): Flow<List<MediaAttachmentEntity>> =
-        database.mediaAttachmentDao().observeForOwner(ownerId, ownerType)
-
-    override suspend fun saveMedia(media: MediaAttachmentEntity) {
-        database.mediaAttachmentDao().upsert(media)
-    }
-
-    override suspend fun deleteMedia(media: MediaAttachmentEntity) {
-        database.mediaAttachmentDao().delete(media)
-    }
-
-    override suspend fun deleteMediaForOwner(
-        ownerId: String,
-        ownerType: String
-    ) {
-        database.mediaAttachmentDao().deleteForOwner(ownerId, ownerType)
-    }
-
     override fun observePeople(): Flow<List<Person>> =
         database.personDao().observeAll().map { entities -> entities.map(PersonEntity::toDomain) }
 
@@ -238,7 +220,6 @@ class RoomActivityRepository(
     override suspend fun setConversationArchived(conversationId: String, value: Boolean) =
         database.conversationDao().setArchived(conversationId, value)
 }
-
 
 
 
