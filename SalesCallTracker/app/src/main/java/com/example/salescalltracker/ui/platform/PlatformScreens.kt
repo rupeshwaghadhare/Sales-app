@@ -16,22 +16,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun BusinessProfileScreen(onBack: () -> Unit = {}) {
-    PlatformPage(
-        "🏪 My Business",
-        "Create and manage your digital business identity.",
-        listOf(
-            "Business Identity" to "Business name, category, description and unique ID.",
-            "Contact Details" to "Phone, WhatsApp and website.",
-            "Location" to "Add your shop, office or service location.",
-            "Products & Services" to "Show what you offer.",
-            "Promote" to "Create campaigns and collaborate with creators."
-        ),
-        onBack
-    )
-}
-
-@Composable
 fun MarketplaceScreen(onBack: () -> Unit = {}) {
     PlatformPage(
         "🛒 Marketplace",
@@ -179,3 +163,4 @@ private fun PlatformPage(
         }
     }
 }
+

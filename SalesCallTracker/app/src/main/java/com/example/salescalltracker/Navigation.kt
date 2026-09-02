@@ -32,7 +32,12 @@ import com.example.salescalltracker.ui.create.CreateScreen
 import com.example.salescalltracker.ui.events.EventSearchScreen
 import com.example.salescalltracker.ui.locations.LocationSearchScreen
 import com.example.salescalltracker.ui.create.OfferingCreateScreen
-import com.example.salescalltracker.ui.platform.*
+import com.example.salescalltracker.ui.platform.CampaignsScreen
+import com.example.salescalltracker.ui.platform.MarketplaceScreen
+import com.example.salescalltracker.ui.platform.ProductsScreen
+import com.example.salescalltracker.ui.platform.ServicesScreen
+import com.example.salescalltracker.ui.platform.WebsiteScreen
+import com.example.salescalltracker.ui.business.BusinessProfileScreen
 import com.example.salescalltracker.ui.connect.ConnectScreen
 
 data class NavigationCall(
@@ -148,6 +153,7 @@ fun MainNavigation(
           }
           entry<BusinessProfile> {
             BusinessProfileScreen(
+              repository = repository,
               onBack = { backStack.removeLastOrNull() },
             )
           }
@@ -349,6 +355,8 @@ private fun MoreMenuItem(
     }
   }
 }
+
+
 
 
 
