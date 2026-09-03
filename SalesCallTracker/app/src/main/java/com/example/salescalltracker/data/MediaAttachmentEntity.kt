@@ -1,10 +1,16 @@
-﻿package com.example.salescalltracker.data
+package com.example.salescalltracker.data
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 @Entity(
-    tableName = "media_attachments"
+    tableName = "media_attachments",
+    indices = [
+        Index(value = ["ownerId"]),
+        Index(value = ["ownerType"]),
+        Index(value = ["workspaceId"]),
+    ]
 )
 data class MediaAttachmentEntity(
     @PrimaryKey
