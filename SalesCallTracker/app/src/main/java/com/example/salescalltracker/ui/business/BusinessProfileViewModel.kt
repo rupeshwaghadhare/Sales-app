@@ -1,4 +1,4 @@
-﻿package com.example.salescalltracker.ui.business
+package com.example.salescalltracker.ui.business
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
