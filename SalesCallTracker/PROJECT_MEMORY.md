@@ -1751,3 +1751,175 @@ Use this checklist when reviewing the product so features are not forgotten:
   - Map/location
   - Service bidding
 - Existing call-log functionality remains protected.
+
+## 43. Context-Adaptive Super-Platform Experience
+
+### Product Principle
+The platform must feel like a combination of multiple best-in-class digital products while remaining **one unified application, one account, and one ecosystem**. It should not feel like a simple classifieds/listing marketplace.
+
+The key principle is:
+
+> **One account + one platform, but the experience adapts to what the user is trying to do.**
+
+The platform should not copy the branding, proprietary UI, code, or exact design of other products. Instead, it should provide its own interface using familiar, high-quality workflow patterns appropriate to each category.
+
+### Context / Intent-Based Experience
+Introduce a conceptual **Marketplace Intent / Experience Engine** that detects or receives the user's intent/category and changes the experience accordingly.
+
+Core intents include:
+- FOOD
+- TRAVEL
+- SHOPPING
+- SERVICES
+- SOCIAL
+- CREATOR
+- BUSINESS
+- EVENT
+- PROPERTY
+- VEHICLE
+- JOBS
+- B2B
+
+Examples:
+- Food/restaurant search → food discovery, restaurant pages, menus, cart, order and delivery-style workflow.
+- Cab/travel search → pickup/destination, cab options, booking, transport and trip workflow.
+- Bus/travel search → route search, schedules, seat selection and booking workflow.
+- Tour search → destinations, packages, availability and booking workflow.
+- Ecommerce search → products, categories, deals, product details, cart, checkout and orders.
+- Creator search → creator feed, profiles, posts/reels/live, follow, message, creator services, products and affiliate opportunities.
+- Map/location search → map-first discovery of restaurants, businesses, services, events and nearby listings.
+- Communication → unified chat, groups, files, locations, listings, quotations, payment links, meetings, calls and related business actions.
+- Services → requirements, providers, proposals/bidding, chat, calls, meetings, agreements, payments and completion.
+- Events → event discovery, live events, location, registration/booking and related communication.
+- Business → business profile, products, services, leads, CRM, campaigns, advertising, content, calendar, team and analytics.
+
+### Marketplace as the Front Door
+Marketplace is the primary discovery center, but it should evolve beyond a listing feed into a full discovery/transaction layer:
+
+```text
+Marketplace
+├── Search
+├── Location / Nearby
+├── Categories
+├── Products
+├── Services
+├── Businesses
+├── Events
+├── Jobs
+├── Property
+├── Vehicles
+├── Digital Products
+├── Live Now
+└── Campaigns
+```
+
+The same platform infrastructure should route users into specialized experiences without requiring separate applications or separate accounts.
+
+### Unified Journey
+A major product journey is:
+
+```text
+Search / Discovery
+    ↓
+Intent / Category
+    ↓
+Specialized Experience
+    ↓
+Listing / Business / Creator / Service
+    ↓
+Location + Details
+    ↓
+Chat | Call | WhatsApp | Book | Buy | Enquire
+    ↓
+Lead / Order / Booking / Proposal
+    ↓
+Calendar / Meeting / CRM
+    ↓
+Payment / Completion
+    ↓
+Review / Repeat / Follow-up
+```
+
+### Platform Modules
+The long-term platform should combine these experiences as modules under one app shell:
+
+```text
+APP SHELL
+├── Identity / One Account
+├── Marketplace / Discovery
+│   ├── Food
+│   ├── Travel
+│   ├── Shopping
+│   ├── Services
+│   ├── Events
+│   ├── Businesses
+│   ├── Jobs
+│   ├── Property
+│   ├── Vehicles
+│   ├── Creators
+│   └── B2B
+├── Social / Creator
+├── Maps / Location
+├── Communication
+├── CRM
+├── Marketing / Campaigns / Ads
+├── Commerce / Bookings / Orders
+├── Payments
+├── Affiliate / QR / Commission
+├── Calendar / Meetings / Calls / Notes
+├── Website / Landing Page Builder
+└── Mini Apps
+```
+
+### Important UX Requirement
+The application may be technically modular, but the user experience should feel cohesive. Do not expose unnecessary technical complexity to the user. Specialized modes should appear naturally from search, category selection, location, or user intent.
+
+### Examples of Desired Product Feel
+The target is a familiar level of depth and workflow quality in each context:
+- Food: modern food discovery/order workflow
+- Travel/cab: modern ride/travel booking workflow
+- Bus: modern route/seat booking workflow
+- Ecommerce: modern catalog/cart/checkout workflow
+- Creator/social: modern feed/profile/follow/content workflow
+- Maps: modern map/search/nearby workflow
+- Communication: modern chat/group/call workflow
+- Services: modern requirement/proposal/bidding workflow
+- Business: modern business dashboard/CRM/marketing workflow
+
+These are **experience references, not dependencies or copies**. The product must maintain its own identity and architecture.
+
+### Engineering Principle
+Do not create separate standalone apps inside the APK. Build one modular platform with shared infrastructure:
+- One identity/account system
+- Shared profiles and workspaces
+- Shared marketplace/listing model
+- Shared location system
+- Shared communication system
+- Shared transaction/payment model
+- Shared notification system
+- Shared analytics
+- Shared CRM
+- Intent-specific presentation and workflows
+
+The existing Android call-log functionality is a protected foundation and must continue working while these experiences are added around it.
+
+### Development Strategy
+Build progressively rather than implementing every vertical simultaneously:
+1. Marketplace shell + search + categories + location + intent navigation
+2. Specialized Food, Travel, Shopping, Services and Events experiences
+3. Creator/Social experience
+4. Communication: chat, groups, calls, meetings, calendar and notes
+5. Business: CRM, campaigns, digital marketing and ads
+6. Payments: links, QR, checkout, gateway, transactions and commissions
+7. Website templates, landing pages and mini-app builder
+
+---
+
+### 2026-09-05 — Added Super-Platform Experience Direction
+- Added the requirement that the app feel like a unified combination of marketplace, food, travel, ecommerce, creator/social, maps, communication, services, events, business and commerce platforms.
+- Added Context-Adaptive / Intent-Based Experience as a core product principle.
+- Added Marketplace Intent / Experience Engine concept.
+- Defined specialized workflows for food, cab/travel, bus, tours, ecommerce, creators, maps, communication, services, events and business.
+- Confirmed that specialized experiences must be implemented as modules within one application rather than separate apps.
+- Confirmed that familiar platform patterns may guide UX quality, but proprietary branding, exact UI and code must not be copied.
+- Confirmed Marketplace remains the front door and discovery center.
