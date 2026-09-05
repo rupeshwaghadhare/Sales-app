@@ -1923,3 +1923,177 @@ Build progressively rather than implementing every vertical simultaneously:
 - Confirmed that specialized experiences must be implemented as modules within one application rather than separate apps.
 - Confirmed that familiar platform patterns may guide UX quality, but proprietary branding, exact UI and code must not be copied.
 - Confirmed Marketplace remains the front door and discovery center.
+
+## 44. Location & Local Discovery Engine
+
+### Product Principle
+Location is a core platform capability, not merely a standalone Locations screen. The platform should use location to improve local discovery, search relevance, maps, service-area matching and context-specific experiences.
+
+### Location Capabilities
+The Location Engine should provide:
+- Current location
+- Selected/manual location
+- Location permission state
+- Search radius
+- Nearby search
+- Latitude/longitude
+- Address
+- City/state/pincode where appropriate
+- Geocoding and reverse geocoding
+- Business/service area
+- Location visibility/privacy controls
+- Location history only where there is a clear user benefit and appropriate consent
+
+### Permission Strategy
+Start with foreground / "while using the app" location access for nearby businesses, local services, products, events, restaurants, travel and map-first discovery. Do not make continuous/background location tracking a default requirement.
+
+### Location-Aware Marketplace
+Marketplace search should combine platform-owned listings with nearby businesses, products, services and events, plus external place/provider data where legally and technically permitted.
+
+Do not scrape or bulk-import third-party business databases without authorization. Use supported APIs, user authorization/ownership flows or properly licensed data.
+
+### Existing Data Foundation
+The marketplace listing model already supports latitude, longitude and address, so location-aware search can be added incrementally.
+
+## 45. Profile Import & Digital Presence Engine
+
+### Product Principle
+Users should be able to connect authorized external accounts and use permitted profile/business information as a starting template for their unified platform identity.
+
+Potential integrations:
+- Google
+- Instagram
+- Facebook
+- WhatsApp
+- Telegram
+- LinkedIn
+
+Integrations are optional. A basic platform profile must work without connecting every external account.
+
+### Account Connection Flow
+```text
+Create account
+    ↓
+Complete digital profile
+    ↓
+Choose external accounts to connect
+    ↓
+OAuth / supported authorization
+    ↓
+Import permitted information
+    ↓
+User reviews and confirms fields
+    ↓
+Create / update platform profile
+```
+
+Possible imported information, subject to provider permissions and policies:
+- Name
+- Profile photo
+- Bio/about
+- Business name
+- Category
+- Public links
+- Contact options
+- Location
+- Services/products where available
+- Working hours
+- Other provider-approved profile data
+
+Never request or store third-party passwords.
+
+### Profile Types
+One account can support:
+- Personal profile
+- Creator profile
+- Freelancer/professional profile
+- Business profile
+- Seller profile
+- Consultant profile
+- Promoter/affiliate profile
+
+### Digital Presence Generation
+Approved profile data can be used as a starting template for:
+- Public profile
+- Business profile
+- Website
+- Landing page
+- Storefront
+- Creator page
+- Mini app
+- Shareable profile page
+
+Generated assets must remain editable.
+
+### Business Import / Claim
+Distinguish between:
+- User-owned/authorized business
+- Business the user is authorized to manage
+- External business discovered for local search
+
+Only authorized business-management data should become a managed platform business profile. Use ownership/claim/verification flows where required.
+
+### Affiliate, Referral & QR Layer
+Eligible users can add:
+- Affiliate links
+- Referral links
+- QR codes
+- Payment links
+- Product/service links
+- Booking links
+- Promotional links
+
+Measurable routing:
+```text
+QR
+ ↓
+Promoter / Affiliate ID
+ ↓
+Profile / Landing Page
+ ↓
+Product / Service
+ ↓
+Click
+ ↓
+Lead / Order / Booking
+ ↓
+Commission
+```
+
+Track where applicable:
+- Views
+- Clicks
+- Leads
+- Orders
+- Bookings
+- Conversions
+- Commission
+- Payout/ledger status
+
+Affiliate/referral rewards must be tied to legitimate transactions or defined conversion events, not recruitment-chain economics.
+
+### External Account Security
+Use:
+- OAuth/provider-supported authorization
+- Explicit consent
+- Minimum required scopes
+- Secure server-side token handling when persistent access is needed
+- No API secrets embedded in the APK
+- Disconnect/revoke controls
+- Import review before publishing
+- Provider-specific API limits and policies
+
+The core Android app must remain functional when an external provider is not connected or unavailable.
+
+### 2026-09-05 — Added Location, Profile Import & Digital Presence Architecture
+- Added Location & Local Discovery Engine as a core platform capability.
+- Added foreground/while-using location as the initial implementation strategy.
+- Added location-aware marketplace search, radius filtering, map readiness and nearby discovery.
+- Added requirement to use authorized APIs/licensed providers rather than scraping third-party business databases.
+- Added Profile Import & Digital Presence Engine.
+- Added optional authorized connections for Google, Instagram, Facebook, WhatsApp, Telegram and LinkedIn.
+- Added user review/confirmation before imported profile information is published.
+- Added conversion of one unified profile into public profile, business profile, website, landing page, storefront, creator page and mini app.
+- Added affiliate/referral links, QR codes, payment links and measurable conversion/commission tracking.
+- Added secure OAuth/permission/revocation principles and prohibition on storing third-party passwords.
+- Added business ownership/authorization/claim distinction for imported business profiles.
